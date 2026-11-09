@@ -1,6 +1,6 @@
 # Problema 7 — DIM0548 Engenharia de Linguagens — Grupo 2
 
-Caio Daniel, Flawbert Costa, Murilo Costa, e Rodrigo Ferreira.
+**Integrantes:** Caio Daniel, Flawbert Costa, Murilo Costa, e Rodrigo Ferreira.
 
 Implementação do analisador léxico (`src/lexer.l`) e sintático (`src/parser.y`)
 da linguagem.
