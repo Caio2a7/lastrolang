@@ -11,13 +11,13 @@
 
 %%
 
-[ \t\n]               ;
+[ \t\r\n]               ;
 "+"                    { return PLUS; }
 "("                    { return LPAREN; }
 ")"                    { return RPAREN; }
 [a-zA-Z][a-zA-Z0-9]*   { yylval.sValue = strdup(yytext);
                           return ID; }
-.                      { yyerror("caractere inválido"); }
+.                      { yyerror("caractere inválido"); return ERRO; }
 
 %%
 

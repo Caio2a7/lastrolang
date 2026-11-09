@@ -12,7 +12,7 @@ extern char *yytext;
 }
 
 %token <sValue> ID
-%token PLUS LPAREN RPAREN
+%token PLUS LPAREN RPAREN ERRO
 
 %start S
 
