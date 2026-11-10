@@ -1,0 +1,71 @@
+=== tests/valido/01_id_simples.txt
+--- entrada:
+a
+
+--- saída:
+reduz r1: E -> id        [a]
+ACEITO: entrada reconhecida pela gramática
+--- código de saída: 0
+
+=== tests/valido/02_id_chamada.txt
+--- entrada:
+a(b)
+
+--- saída:
+reduz r1: E -> id        [b]
+reduz r2: E -> id ( E )  [a ( b )]
+ACEITO: entrada reconhecida pela gramática
+--- código de saída: 0
+
+=== tests/valido/03_soma.txt
+--- entrada:
+a+b
+
+--- saída:
+reduz r1: E -> id        [a]
+reduz r3: E -> E + id    [a + b]
+ACEITO: entrada reconhecida pela gramática
+--- código de saída: 0
+
+=== tests/valido/04_aninhado.txt
+--- entrada:
+a(b+c)
+
+--- saída:
+reduz r1: E -> id        [b]
+reduz r3: E -> E + id    [b + c]
+reduz r2: E -> id ( E )  [a ( b )]
+ACEITO: entrada reconhecida pela gramática
+--- código de saída: 0
+
+=== tests/invalido/01_erro_lexico.txt
+--- entrada:
+a#b
+
+--- saída:
+1: caractere inválido perto de '#'
+1: syntax error perto de '#'
+reduz r1: E -> id        [a]
+REJEITADO: entrada não pertence à linguagem
+--- código de saída: 1
+
+=== tests/invalido/02_erro_sintatico_parenteses.txt
+--- entrada:
+a(b
+
+--- saída:
+2: syntax error perto de ''
+reduz r1: E -> id        [b]
+REJEITADO: entrada não pertence à linguagem
+--- código de saída: 1
+
+=== tests/invalido/03_erro_sintatico_soma.txt
+--- entrada:
+a+
+
+--- saída:
+2: syntax error perto de ''
+reduz r1: E -> id        [a]
+REJEITADO: entrada não pertence à linguagem
+--- código de saída: 1
+

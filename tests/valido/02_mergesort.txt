@@ -1,0 +1,54 @@
+const int MAX := 1000;
+proc intercala(out int[MAX] v, int ini, int meio, int fim)
+{
+    int[MAX] aux := [0; MAX];
+    int i := ini;
+    int j := meio + 1;
+    int k := ini;
+    while (i <= meio && j <= fim) {
+        if (v[i] <= v[j]) {
+            aux[k] := v[i];
+            i := i + 1;
+        } else {
+            aux[k] := v[j];
+            j := j + 1;
+        }
+        k := k + 1;
+    }
+    while (i <= meio) {
+        aux[k] := v[i];
+        i := i + 1;
+        k := k + 1;
+    }
+    while (j <= fim) {
+        aux[k] := v[j];
+        j := j + 1;
+        k := k + 1;
+    }
+    for (int p := ini to fim) {
+        v[p] := aux[p];
+    }
+}
+proc merge_sort(out int[MAX] v, int ini, int fim) {
+    if (ini < fim) {
+        int meio := (ini + fim) / 2;
+        merge_sort(out v, ini, meio);
+        merge_sort(out v, meio + 1, fim);
+        intercala(out v, ini, meio, fim);
+    }
+}
+proc main() {
+    int n := 0;
+    ler(out n);
+    while (n < 1 || n > MAX) {
+        ler(out n);
+    }
+    int[MAX] valores := [0; MAX];
+    for (int i := 0 to n - 1) {
+        ler(out valores[i]);
+    }
+    merge_sort(out valores, 0, n - 1);
+    for (int i := 0 to n - 1) {
+        escrever(valores[i]);
+    }
+}

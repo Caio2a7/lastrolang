@@ -1,0 +1,3 @@
+proc main() {
+    int total = 2;
+}

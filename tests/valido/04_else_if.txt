@@ -1,0 +1,13 @@
+proc liquida(int ordem, out int status) {
+    if (saldo_disponivel(ordem) >= valor(ordem)) {
+        debita(ordem);
+        status := 1;
+    } else if (limite_credito(ordem) >= valor(ordem)) {
+        usa_limite(ordem);
+        status := 2;
+    } else {
+        status := 0;
+    }
+}
+proc main() {
+}

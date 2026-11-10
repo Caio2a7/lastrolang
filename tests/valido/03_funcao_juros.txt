@@ -1,0 +1,10 @@
+func juros(int principal, int taxa_bp, int dias) -> int {
+    return (principal * taxa_bp * dias) / (10000 * 360);
+}
+proc main() {
+    int principal := 100000;
+    int taxa := 250;
+    int dias := 30;
+    int resultado := juros(principal, taxa, dias);
+    escrever(resultado);
+}
