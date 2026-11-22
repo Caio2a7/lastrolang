@@ -1,3 +1,16 @@
+func valor(int ordem) -> int {
+    return ordem * 100;
+}
+func saldo_disponivel(int ordem) -> int {
+    return 500;
+}
+func limite_credito(int ordem) -> int {
+    return 1000;
+}
+proc debita(int ordem) {
+}
+proc usa_limite(int ordem) {
+}
 proc liquida(int ordem, out int status) {
     if (saldo_disponivel(ordem) >= valor(ordem)) {
         debita(ordem);
@@ -10,4 +23,11 @@ proc liquida(int ordem, out int status) {
     }
 }
 proc main() {
+    int status := 0;
+    liquida(3, out status);
+    escrever(status);
+    liquida(8, out status);
+    escrever(status);
+    liquida(20, out status);
+    escrever(status);
 }
