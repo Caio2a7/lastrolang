@@ -18,7 +18,7 @@ typedef struct {
 /* Monta um atributo a partir de seus três componentes. */
 Atr atr(char *cod, TypeDesc *tipo, int linha);
 
-/* Operação binária: cod "a op b", tipo por tipo_resultado, linha de a. */
+/* Operação binária: cod "(a op b)", tipo por tipo_resultado, linha de a. */
 Atr atr_bin(Atr a, const char *op_c, Atr b, Op op);
 
 /* Operação unária: cod "(op a)"; os parênteses evitam "- -x" virar "--x" em C. */

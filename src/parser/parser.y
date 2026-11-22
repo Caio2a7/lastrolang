@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "semantic/semantico.h"
+#include "gen/gen.h"
 
 int yylex(void);
 int yyerror(char *s);
@@ -11,6 +12,7 @@ extern char *yytext;
 extern int yydebug;
 
 static Subprog *current_sub;  /* subprograma cuja assinatura/corpo está sendo analisado */
+static char *codigo_c = "";   /* programa C inteiro, montado na regra programa */
 %}
 
 %union {
@@ -29,6 +31,8 @@ static Subprog *current_sub;  /* subprograma cuja assinatura/corpo está sendo a
 
 %type <atr> expr conj rel soma termo fator literal alvo chamada
 %type <str> op_rel args arg
+%type <str> consts decl_const subprogs subprog corpo bloco bloco_laco fecha_bloco
+%type <str> cmds cmd decl_var atrib if_stmt while_stmt for_stmt
 
 %token CONST PROC FUNC INT BOOL IF ELSE WHILE FOR TO
 %token SWITCH CASE DEFAULT BREAK CONTINUE RETURN OUT TRUE FALSE
@@ -47,36 +51,37 @@ static Subprog *current_sub;  /* subprograma cuja assinatura/corpo está sendo a
 %%
 
 programa
-    : subprogs
-    | consts subprogs
+    : subprogs          { codigo_c = cod_fmt("%s%s", gen_prologo, $1); }
+    | consts subprogs   { codigo_c = cod_fmt("%s%s\n%s", gen_prologo, $1, $2); }
     ;
 
 consts
     : decl_const
-    | decl_const consts
+    | decl_const consts { $$ = cod_fmt("%s%s", $1, $2); }
     ;
 
 decl_const
     : CONST tipo_prim ID ASSIGN literal SEMI {
             Symbol *s = declare_var($3, C_CONST, $2, 0, yylineno);
             if (s) s->value = strtol($5.cod, NULL, 10);  /* usado em int[MAX] */
+            $$ = cod_fmt("#define %s %s\n", $3, $5.cod);  /* constante de compilação, serve de tamanho */
         }
     ;
 
 subprogs
     : subprog
-    | subprog subprogs
+    | subprog subprogs  { $$ = cod_fmt("%s%s", $1, $2); }
     ;
 
 subprog
-    : PROC assinatura corpo             { scope_pop(); }        
+    : PROC assinatura corpo             { scope_pop(); $$ = current_sub ? gen_sub(current_sub, $3) : ""; }
     | FUNC assinatura ARROW tipo        {
             if (current_sub) {  /* o escopo aponta para current_sub, então o return já enxerga o tipo */
                 current_sub->is_func = 1;
                 current_sub->ret = $4;
             }
         }
-        corpo                           { scope_pop(); }
+        corpo                           { scope_pop(); $$ = current_sub ? gen_sub(current_sub, $6) : ""; }
     ;
 
 assinatura
@@ -137,18 +142,18 @@ tamanho
 
 /* Corpo de subprograma e de for: o escopo já foi aberto antes. */
 corpo
-    : LBRACE RBRACE
-    | LBRACE cmds RBRACE
+    : LBRACE RBRACE         { $$ = ""; }
+    | LBRACE cmds RBRACE    { $$ = $2; }
     ;
 
 /* Bloco de if/else: abre um escopo próprio. */
 bloco
-    : abre_bloco fecha_bloco
+    : abre_bloco fecha_bloco    { $$ = gen_bloco($2); }
     ;
 
 /* Bloco de while: escopo próprio, marcado como laço. */
 bloco_laco
-    : abre_laco fecha_bloco
+    : abre_laco fecha_bloco     { $$ = gen_bloco($2); }
     ;
 
 abre_bloco
@@ -160,46 +165,64 @@ abre_laco
     ;
 
 fecha_bloco
-    : RBRACE        { scope_pop(); }
-    | cmds RBRACE   { scope_pop(); }
+    : RBRACE        { scope_pop(); $$ = ""; }
+    | cmds RBRACE   { scope_pop(); $$ = $1; }
     ;
 
 cmds
     : cmd
-    | cmd cmds
+    | cmd cmds  { $$ = cod_fmt("%s%s", $1, $2); }
     ;
 
 cmd
     : decl_var
     | atrib
-    | chamada SEMI
+    | chamada SEMI      { $$ = cod_fmt("%s;\n", $1.cod); }
     | if_stmt
     | while_stmt
     | for_stmt
-    | BREAK SEMI
-    | CONTINUE SEMI
-    | RETURN SEMI
-    | RETURN expr SEMI
+    | BREAK SEMI        {
+            Laco *l = laco_topo();
+            if (!l) erro_semantico(yylineno, "break fora de laço");
+            $$ = l ? cod_fmt("goto _L%d;\n", l->brk) : "";
+        }
+    | CONTINUE SEMI     {
+            Laco *l = laco_topo();
+            if (!l) erro_semantico(yylineno, "continue fora de laço");
+            $$ = l ? cod_fmt("goto _L%d;\n", l->cont) : "";
+        }
+    | RETURN SEMI       {
+            int main_proc = current_sub && !current_sub->is_func && strcmp(current_sub->name, "main") == 0;
+            $$ = main_proc ? "return 0;\n" : "return;\n";  /* proc main vira int main */
+        }
+    | RETURN expr SEMI  { $$ = cod_fmt("return %s;\n", $2.cod); }
     ;
 
+/* declare_var depois do inicializador: "int x := x" acusa x não declarado */
 decl_var
-    : tipo ID ASSIGN inicial SEMI   { declare_var($2, C_VAR, $1, 0, yylineno); }
-    ;
-
-inicial
-    : expr
-    | LBRACKET expr SEMI tamanho RBRACKET
+    : tipo ID ASSIGN expr SEMI  {
+            declare_var($2, C_VAR, $1, 0, yylineno);
+            $$ = gen_decl($1, $2, $4);
+        }
+    | tipo ID ASSIGN LBRACKET expr SEMI tamanho RBRACKET SEMI {
+            declare_var($2, C_VAR, $1, 0, yylineno);
+            if ($1->kind == K_ARRAY && $7 > 0 && $7 != $1->size)
+                erro_semantico(yylineno, "'%s' tem %d elementos, mas o inicializador tem %d", $2, $1->size, $7);
+            $$ = gen_decl_preenche($1, $2, $5, yylineno);
+        }
     ;
 
 atrib
-    : alvo ASSIGN expr SEMI
+    : alvo ASSIGN expr SEMI     { $$ = gen_atrib($1, $3); }
     ;
 
 alvo
     /* tipo vem da tabela de símbolos; não declarado => type_erro (erro já reportado por use_var) */
     : ID    {
             Symbol *s = use_var($1, yylineno);
-            $$ = atr($1, s ? s->type : &type_erro, yylineno);
+            /* parâmetro out escalar é ponteiro no C */
+            int ptr = s && s->category == C_PARAM && s->is_out && s->type->kind != K_ARRAY;
+            $$ = atr(ptr ? cod_fmt("(*%s)", $1) : $1, s ? s->type : &type_erro, yylineno);
         }
     | ID LBRACKET expr RBRACKET {
             Symbol *s = use_var($1, yylineno);
@@ -228,25 +251,35 @@ args
 
 arg
     : expr     { $$ = $1.cod; }
-    | OUT alvo { $$ = cod_fmt("&%s", $2.cod); }  /* out = passagem por referência: ponteiro no C */
+    /* out = passagem por referência: ponteiro no C; array já é ponteiro */
+    | OUT alvo { $$ = $2.tipo->kind == K_ARRAY ? $2.cod : cod_fmt("&%s", $2.cod); }
     ;
 
 if_stmt
-    : IF LPAREN expr RPAREN bloco
-    | IF LPAREN expr RPAREN bloco ELSE if_stmt
-    | IF LPAREN expr RPAREN bloco ELSE bloco
+    : IF LPAREN expr RPAREN bloco                 { $$ = gen_if($3, $5, NULL); }
+    | IF LPAREN expr RPAREN bloco ELSE if_stmt    { $$ = gen_if($3, $5, $7); }
+    | IF LPAREN expr RPAREN bloco ELSE bloco      { $$ = gen_if($3, $5, $7); }
     ;
 
+/* rótulos do laço criados antes do corpo, para break/continue os acharem */
 while_stmt
-    : WHILE LPAREN expr RPAREN bloco_laco
+    : WHILE { laco_abre(); } LPAREN expr RPAREN bloco_laco {
+            $$ = gen_while(*laco_topo(), $4, $6);
+            laco_fecha();
+        }
     ;
 
 for_stmt
     : FOR LPAREN INT ID ASSIGN expr TO expr RPAREN  {
             scope_push_block(1);
             declare_var($4, C_VAR, &type_int, 0, yylineno);
-        } 
-        corpo                                       { scope_pop(); }
+            laco_abre();
+        }
+        corpo                                       {
+            scope_pop();
+            $$ = gen_for(*laco_topo(), $4, $6, $8, $11);
+            laco_fecha();
+        }
     ;
 
 expr
@@ -289,7 +322,7 @@ fator
     : literal
     | alvo
     | chamada
-    | LPAREN expr RPAREN  { $$ = atr(cod_fmt("(%s)", $2.cod), $2.tipo, $2.linha); }
+    | LPAREN expr RPAREN  { $$ = $2; }  /* atr_bin já pôs os parênteses */
     | MINUS fator         { $$ = atr_un("-", $2, OP_ARITMETICO); }
     | NOT fator           { $$ = atr_un("!", $2, OP_LOGICO); }
     ;
@@ -302,9 +335,14 @@ literal
 
 %%
 
+/* Uso: compilador [-t] [-s] < programa.txt > programa.c
+ *   -t  trace da derivação (shift/reduce) em stderr
+ *   -s  imprime as tabelas de tipos, subprogramas e símbolos no lugar do C */
 int main(int argc, char **argv) {
-    if (argc > 1 && strcmp(argv[1], "-t") == 0) {
-        yydebug = 1;
+    int tabelas = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-t") == 0) yydebug = 1;
+        else if (strcmp(argv[i], "-s") == 0) tabelas = 1;
     }
 
     type_init();
@@ -314,20 +352,27 @@ int main(int argc, char **argv) {
 
     int status = yyparse();
     scope_pop();
+    if (status == 0 && !sub_lookup("main")) {
+        erro_semantico(yylineno, "o programa não tem main");  /* sem ela o gcc não liga */
+    }
 
-    type_print();
-    sub_print();
-    table_print();
+    if (tabelas) {
+        type_print();
+        sub_print();
+        table_print();
+    }
 
+    /* C só sai em stdout se o programa estiver correto; mensagens vão para stderr */
     int erros = erros_semanticos();
     if (status == 0 && erros == 0) {
-        printf("ACEITO: programa correto\n");
+        if (!tabelas) fputs(codigo_c, stdout);
+        fprintf(stderr, "ACEITO: programa correto\n");
         return 0;
     }
     if (erros > 0) {
         fprintf(stderr, "%d erro(s) semântico(s)\n", erros);
     }
-    printf("REJEITADO: programa contém erro\n");
+    fprintf(stderr, "REJEITADO: programa contém erro\n");
     return 1;
 }
 
