@@ -62,6 +62,7 @@ consts
 
 decl_const
     : CONST tipo_prim ID ASSIGN literal SEMI {
+            verifica_atribuicao($2, $5.tipo, $5.linha, "constante");
             Symbol *s = declare_var($3, C_CONST, $2, 0, yylineno);
             if (s) s->value = strtol($5.cod, NULL, 10);  /* usado em int[MAX] */
             $$ = cod_fmt("#define %s %s\n", $3, $5.cod);  /* constante de compilação, serve de tamanho */
@@ -201,19 +202,29 @@ cmd
 /* declare_var depois do inicializador: "int x := x" acusa x não declarado */
 decl_var
     : tipo ID ASSIGN expr SEMI  {
+            verifica_atribuicao($1, $4.tipo, $4.linha, "inicialização");
             declare_var($2, C_VAR, $1, 0, yylineno);
             $$ = gen_decl($1, $2, $4);
         }
     | tipo ID ASSIGN LBRACKET expr SEMI tamanho RBRACKET SEMI {
             declare_var($2, C_VAR, $1, 0, yylineno);
-            if ($1->kind == K_ARRAY && $7 > 0 && $7 != $1->size)
-                erro_semantico(yylineno, "'%s' tem %d elementos, mas o inicializador tem %d", $2, $1->size, $7);
+            if ($1->kind == K_ARRAY) {
+                if ($1->size > 0 && $7 > 0 && $7 != $1->size)
+                    erro_semantico(yylineno, "'%s' tem %d elementos, mas o inicializador tem %d", $2, $1->size, $7);
+                verifica_atribuicao($1->elem, $5.tipo, $5.linha, "inicializador de array");
+            }
             $$ = gen_decl_preenche($1, $2, $5, yylineno);
         }
     ;
 
 atrib
-    : alvo ASSIGN expr SEMI     { $$ = gen_atrib($1, $3); }
+    : alvo ASSIGN expr SEMI     {
+            if ($1.eh_const)
+                erro_semantico($1.linha, "não é possível atribuir à constante '%s'", $1.cod);
+            else
+                verifica_atribuicao($1.tipo, $3.tipo, $1.linha, "atribuição");
+            $$ = gen_atrib($1, $3);
+        }
     ;
 
 alvo
@@ -223,12 +234,11 @@ alvo
             /* parâmetro out escalar é ponteiro no C */
             int ptr = s && s->category == C_PARAM && s->is_out && s->type->kind != K_ARRAY;
             $$ = atr(ptr ? cod_fmt("(*%s)", $1) : $1, s ? s->type : &type_erro, yylineno);
+            $$.eh_const = s && s->category == C_CONST;
         }
     | ID LBRACKET expr RBRACKET {
             Symbol *s = use_var($1, yylineno);
-            TypeDesc *t = s ? s->type : &type_erro;
-            /* v[i] tem o tipo do elemento; acusar indexação de não-array é da #10 */
-            $$ = atr(cod_fmt("%s[%s]", $1, $3.cod), t->kind == K_ARRAY ? t->elem : t, yylineno);
+            $$ = verifica_indexacao($1, s, $3, yylineno);
         }
     ;
 
@@ -252,7 +262,11 @@ args
 arg
     : expr     { $$ = $1.cod; }
     /* out = passagem por referência: ponteiro no C; array já é ponteiro */
-    | OUT alvo { $$ = $2.tipo->kind == K_ARRAY ? $2.cod : cod_fmt("&%s", $2.cod); }
+    | OUT alvo {
+            if ($2.eh_const)
+                erro_semantico($2.linha, "constante '%s' não pode ser passada como 'out'", $2.cod);
+            $$ = $2.tipo->kind == K_ARRAY ? $2.cod : cod_fmt("&%s", $2.cod);
+        }
     ;
 
 if_stmt

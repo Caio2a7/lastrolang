@@ -1,0 +1,6 @@
+const int MAX := 10;
+
+proc main() {
+    MAX := 2;
+    ler(out MAX);
+}

@@ -1,0 +1,4 @@
+proc main() {
+    int[10] a := [0; 5];
+    int[3] b := [true; 3];
+}

@@ -1,4 +1,4 @@
-/* Teste da issue #9: compatibilidade e tipos de expressões (inclui float e propagação de erro).
+/* Teste das issues #9 e #10: compatibilidade de expressões, atribuição e indexação.
  * Rodar com: make test-tipos */
 #include "semantic/semantico.h"
 
@@ -8,6 +8,8 @@
 int main(void) {
     TypeDesc *res = NULL;
     TypeDesc *arr = type_array(&type_int, 3);
+    TypeDesc *arr5 = type_array(&type_int, 5);
+    TypeDesc *arr_bool = type_array(&type_bool, 3);
 
     /* compativel: mesmos tipos, coerção int <-> float, void rejeitado, erro sem cascata */
     assert(compativel(&type_int, &type_int, &res) && res == &type_int);
@@ -59,6 +61,29 @@ int main(void) {
     assert(not_err.tipo == &type_erro && erros_semanticos() == erros + 2);
     Atr neg_err = atr_un("-", atr("1", &type_bool, 4), OP_ARITMETICO);
     assert(neg_err.tipo == &type_erro && erros_semanticos() == erros + 3);
+
+    /* Atribuição (#10): iguais, int -> float permitido, float -> int e arrays distintos rejeitados */
+    assert(tipo_atribuivel(&type_int, &type_int));
+    assert(tipo_atribuivel(&type_float, &type_int));
+    assert(!tipo_atribuivel(&type_int, &type_float));
+    assert(!tipo_atribuivel(&type_int, &type_bool));
+    assert(!tipo_atribuivel(&type_int, &type_void));
+    assert(tipo_atribuivel(arr, type_array(&type_int, 3)));
+    assert(!tipo_atribuivel(arr, arr5));
+    assert(!tipo_atribuivel(arr, arr_bool));
+    assert(tipo_atribuivel(&type_erro, &type_bool));
+    assert(tipo_atribuivel(&type_int, &type_erro));
+
+    /* Indexação (#10): array + int OK; não-array e índice bool geram erro e devolvem type_erro */
+    Symbol s_arr = { .category = C_VAR, .type = arr };
+    Symbol s_int = { .category = C_VAR, .type = &type_int };
+    int e10 = erros_semanticos();
+    Atr elem = verifica_indexacao("v", &s_arr, atr("0", &type_int, 10), 10);
+    assert(elem.tipo == &type_int && erros_semanticos() == e10);
+    Atr idx_err = verifica_indexacao("v", &s_arr, atr("1", &type_bool, 11), 11);
+    assert(idx_err.tipo == &type_int && erros_semanticos() == e10 + 1);
+    Atr nao_arr = verifica_indexacao("x", &s_int, atr("0", &type_int, 12), 12);
+    assert(nao_arr.tipo == &type_erro && erros_semanticos() == e10 + 2);
 
     puts("tipos: OK");
     return 0;
