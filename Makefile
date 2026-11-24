@@ -39,6 +39,11 @@ test-tabelas: | $(BUILD)
 	$(CC) $(CFLAGS) -o $(BUILD)/tabelas_test tests/tabelas_test.c $(SRCS)
 	./$(BUILD)/tabelas_test
 
+# Teste em C dos tipos de expressões (issue #9).
+test-tipos: | $(BUILD)
+	$(CC) $(CFLAGS) -o $(BUILD)/tipos_test tests/tipos_test.c $(SRCS)
+	./$(BUILD)/tipos_test
+
 # Mostra o resumo de conflitos do y.output (gerado pelo -v do yacc),
 # útil para conferir contra as tabelas LR(0)/SLR/LR(1)/LALR(1) feitas à mão.
 conflitos: $(BUILD)/y.tab.c
@@ -47,4 +52,4 @@ conflitos: $(BUILD)/y.tab.c
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: all run test test-tabelas conflitos clean
+.PHONY: all run test test-tabelas test-tipos conflitos clean

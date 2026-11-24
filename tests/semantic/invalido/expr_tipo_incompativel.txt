@@ -1,0 +1,9 @@
+proc main() {
+    bool x := true;
+    int a := 1 + true;
+    bool b := !3;
+    bool c := x && 1;
+    int d := -true;
+    bool e := true < false;
+    bool f := 1 = true;
+}
