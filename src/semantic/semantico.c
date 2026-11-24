@@ -1,20 +1,56 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "semantico.h"
 
 /* Contador de erros semânticos; define o código de saída do compilador. */
 static int total_erros = 0;
+
+static int eh_numerico(const TypeDesc *t) {
+    return t->kind == K_INT || t->kind == K_FLOAT;
+}
 
 Atr atr(char *cod, TypeDesc *tipo, int linha) {
     Atr a = { cod, tipo, linha };
     return a;
 }
 
+int compativel(TypeDesc *a, TypeDesc *b, TypeDesc **res) {
+    if (a->kind == K_ERRO || b->kind == K_ERRO) {
+        if (res) *res = &type_erro;
+        return 1;  /* propaga erro sem cascata */
+    }
+    if (a->kind == K_VOID || b->kind == K_VOID) {
+        if (res) *res = &type_erro;
+        return 0;
+    }
+    if (type_equal(a, b)) {
+        if (res) *res = a;
+        return 1;
+    }
+    if ((a->kind == K_INT && b->kind == K_FLOAT) || (a->kind == K_FLOAT && b->kind == K_INT)) {
+        if (res) *res = &type_float;
+        return 1;
+    }
+    if (res) *res = &type_erro;
+    return 0;
+}
+
 TypeDesc *tipo_resultado(Op op, TypeDesc *a, TypeDesc *b) {
-    if (a->kind == K_ERRO || b->kind == K_ERRO) return &type_erro;  /* sem cascata de erros */
-    if (op == OP_ARITMETICO) return (a->kind == K_FLOAT || b->kind == K_FLOAT) ? &type_float : &type_int;
-    return &type_bool;  /* relacional e lógico */
+    TypeDesc *res = &type_erro;
+    if (!compativel(a, b, &res) || res->kind == K_ERRO) return &type_erro;
+    switch (op) {
+    case OP_ARITMETICO:
+        return eh_numerico(res) ? res : &type_erro;
+    case OP_RELACIONAL:
+        return eh_numerico(res) ? &type_bool : &type_erro;
+    case OP_IGUALDADE:
+        return (eh_numerico(res) || res->kind == K_BOOL) ? &type_bool : &type_erro;
+    case OP_LOGICO:
+        return res->kind == K_BOOL ? &type_bool : &type_erro;
+    }
+    return &type_erro;
 }
 
 /* Formata fmt/ap em memória nova; encerra o programa se faltar memória. */
@@ -41,12 +77,33 @@ char *cod_fmt(const char *fmt, ...) {
 }
 
 Atr atr_bin(Atr a, const char *op_c, Atr b, Op op) {
-    return atr(cod_fmt("(%s %s %s)", a.cod, op_c, b.cod),
-               tipo_resultado(op, a.tipo, b.tipo), a.linha);
+    char *cod = cod_fmt("(%s %s %s)", a.cod, op_c, b.cod);
+    if (a.tipo->kind == K_ERRO || b.tipo->kind == K_ERRO) {
+        return atr(cod, &type_erro, a.linha);
+    }
+    TypeDesc *res = tipo_resultado(op, a.tipo, b.tipo);
+    if (res->kind == K_ERRO) {
+        char *sa = type_str(a.tipo), *sb = type_str(b.tipo);
+        const char *op_txt = strcmp(op_c, "==") == 0 ? "=" : op_c;
+        erro_semantico(a.linha, "operador '%s' incompatível com '%s' e '%s'", op_txt, sa, sb);
+        free(sa);
+        free(sb);
+    }
+    return atr(cod, res, a.linha);
 }
 
 Atr atr_un(const char *op_c, Atr a, Op op) {
-    return atr(cod_fmt("(%s%s)", op_c, a.cod), tipo_resultado(op, a.tipo, a.tipo), a.linha);
+    char *cod = cod_fmt("(%s%s)", op_c, a.cod);
+    if (a.tipo->kind == K_ERRO) {
+        return atr(cod, &type_erro, a.linha);
+    }
+    TypeDesc *res = tipo_resultado(op, a.tipo, a.tipo);
+    if (res->kind == K_ERRO) {
+        char *sa = type_str(a.tipo);
+        erro_semantico(a.linha, "operador '%s' incompatível com '%s'", op_c, sa);
+        free(sa);
+    }
+    return atr(cod, res, a.linha);
 }
 
 void erro_semantico(int linha, const char *fmt, ...) {

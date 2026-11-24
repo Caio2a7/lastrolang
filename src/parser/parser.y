@@ -293,7 +293,10 @@ conj
     ;
 
 rel
-    : soma op_rel soma  { $$ = atr_bin($1, $2, $3, OP_RELACIONAL); }
+    : soma op_rel soma  {
+            Op op = ($2[0] == '=' || $2[0] == '!') ? OP_IGUALDADE : OP_RELACIONAL;
+            $$ = atr_bin($1, $2, $3, op);
+        }
     | soma
     ;
 

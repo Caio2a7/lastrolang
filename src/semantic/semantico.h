@@ -5,8 +5,8 @@
 #include "semantic/symtab.h"
 #include "semantic/subprog.h"
 
-/* Categoria do operador, usada para decidir o tipo do resultado. */
-typedef enum { OP_ARITMETICO, OP_RELACIONAL, OP_LOGICO } Op;
+/* Categoria do operador, usada para verificar e decidir o tipo do resultado. */
+typedef enum { OP_ARITMETICO, OP_RELACIONAL, OP_IGUALDADE, OP_LOGICO } Op;
 
 /* Atributo sintetizado de uma expressão: texto C, tipo e linha de origem. */
 typedef struct {
@@ -18,13 +18,17 @@ typedef struct {
 /* Monta um atributo a partir de seus três componentes. */
 Atr atr(char *cod, TypeDesc *tipo, int linha);
 
-/* Operação binária: cod "(a op b)", tipo por tipo_resultado, linha de a. */
+/* Operação binária: cod "(a op b)", verifica tipos por compativel/tipo_resultado, linha de a. */
 Atr atr_bin(Atr a, const char *op_c, Atr b, Op op);
 
 /* Operação unária: cod "(op a)"; os parênteses evitam "- -x" virar "--x" em C. */
 Atr atr_un(const char *op_c, Atr a, Op op);
 
-/* Tipo resultante de um operador (sem checar compatibilidade; isso é a #9). */
+/* Compatibilidade de operandos em expressões: mesmo tipo (exceto void) ou int <-> float.
+ * Grava em *res o tipo resultante (type_float em int/float, type_erro se algum for erro). */
+int compativel(TypeDesc *a, TypeDesc *b, TypeDesc **res);
+
+/* Tipo resultante de um operador, ou &type_erro se os operandos forem incompatíveis. */
 TypeDesc *tipo_resultado(Op op, TypeDesc *a, TypeDesc *b);
 
 /* printf que devolve texto C em memória recém-alocada. */
