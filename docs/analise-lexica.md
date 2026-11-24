@@ -12,7 +12,7 @@ A especificação parte de três definições auxiliares: `digito = [0-9]`, `let
 | Palavra reservada | `int` `bool` | `INT` `BOOL` |
 | Palavra reservada | `if` `else` `while` `for` `to` | `IF` `ELSE` `WHILE` `FOR` `TO` |
 | Palavra reservada | `switch` `case` `default` | `SWITCH` `CASE` `DEFAULT` |
-| Palavra reservada | `break` `continue` `return` `out` | `BREAK` `CONTINUE` `RETURN` `OUT` |
+| Palavra reservada | `break` `continue` `return` `ref` | `BREAK` `CONTINUE` `RETURN` `REF` |
 | Literal lógico | `true` `false` | `TRUE` `FALSE` |
 | Atribuição | `:=` | `ASSIGN` |
 | Relacional | `=` `!=` `<=` `<` `>=` `>` | `EQ` `NEQ` `LE` `LT` `GE` `GT` |

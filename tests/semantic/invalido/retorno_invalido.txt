@@ -1,0 +1,22 @@
+proc p() {
+    return 1;
+}
+
+func f() -> int {
+    return;
+}
+
+func g() -> int {
+    return true;
+}
+
+func sem_retorno() -> int {
+}
+
+func retorna_array() -> int[3] {
+    int[3] v := [0; 3];
+    return v;
+}
+
+proc main() {
+}

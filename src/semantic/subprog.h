@@ -16,6 +16,7 @@ typedef struct Subprog {
     Symbol *params;   // Primeiro parâmetro; os demais seguem por next_param, na ordem da assinatura
     int n_params;     // Quantidade de parâmetros
     int is_builtin;   // ler/escrever: verificação própria na #13
+    int has_return;   // 1 se o corpo contém ao menos um comando return
     int line;         // Linha da declaração; 0 nos embutidos
 } Subprog;
 

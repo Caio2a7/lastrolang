@@ -11,7 +11,7 @@ proc debita(int ordem) {
 }
 proc usa_limite(int ordem) {
 }
-proc liquida(int ordem, out int status) {
+proc liquida(int ordem, ref int status) {
     if (saldo_disponivel(ordem) >= valor(ordem)) {
         debita(ordem);
         status := 1;
@@ -24,10 +24,10 @@ proc liquida(int ordem, out int status) {
 }
 proc main() {
     int status := 0;
-    liquida(3, out status);
+    liquida(3, ref status);
     escrever(status);
-    liquida(8, out status);
+    liquida(8, ref status);
     escrever(status);
-    liquida(20, out status);
+    liquida(20, ref status);
     escrever(status);
 }

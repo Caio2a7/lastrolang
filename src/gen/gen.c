@@ -130,7 +130,7 @@ char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int linha) {
 }
 
 char *gen_atrib(Atr alvo, Atr e) {
-    if (alvo.tipo->kind == K_ARRAY) {  /* tamanho pelo tipo: alvo pode ser parâmetro out (ponteiro) */
+    if (alvo.tipo->kind == K_ARRAY) {  /* tamanho pelo tipo: alvo pode ser parâmetro ref (ponteiro) */
         return cod_fmt("memcpy(%s, %s, sizeof(%s) * %d);\n",
                        alvo.cod, e.cod, c_tipo(alvo.tipo->elem), alvo.tipo->size);
     }
@@ -182,16 +182,16 @@ char *gen_sub(const Subprog *sub, const char *corpo) {
 
     for (Symbol *p = sub->params; p; p = p->next_param) {
         char *d;
-        if (p->type->kind == K_ARRAY && !p->is_out) {
+        if (p->type->kind == K_ARRAY && !p->is_ref) {
             /* array por valor: o C passa ponteiro, então o corpo trabalha numa cópia local */
             char *orig = cod_fmt("_p_%s", p->name);
             d = c_decl(p->type, orig);
             copias = cod_fmt("%s%s;\nmemcpy(%s, %s, sizeof %s);\n",
                              copias, c_decl(p->type, p->name), p->name, orig, p->name);
-        } else if (p->is_out && p->type->kind != K_ARRAY) {
+        } else if (p->is_ref && p->type->kind != K_ARRAY) {
             d = cod_fmt("%s *%s", c_tipo(p->type), p->name);  /* usado como (*x) no corpo */
         } else {
-            d = c_decl(p->type, p->name);  /* escalar por valor ou array out */
+            d = c_decl(p->type, p->name);  /* escalar por valor ou array ref */
         }
         params = *params ? cod_fmt("%s, %s", params, d) : d;
     }

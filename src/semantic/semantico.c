@@ -142,6 +142,142 @@ Atr verifica_indexacao(const char *nome, Symbol *s, Atr idx, int linha) {
     return res;
 }
 
+Arg *arg_novo(char *cod, TypeDesc *tipo, int is_ref, int linha) {
+    Arg *a = malloc(sizeof *a);
+    if (!a) {
+        perror("arg_novo");
+        exit(1);
+    }
+    a->cod = cod;
+    a->tipo = tipo;
+    a->is_ref = is_ref;
+    a->linha = linha;
+    a->next = NULL;
+    return a;
+}
+
+static char *junta_args_cod(const Arg *args) {
+    char *res = "";
+    for (const Arg *a = args; a; a = a->next) {
+        res = *res ? cod_fmt("%s, %s", res, a->cod) : a->cod;
+    }
+    return res;
+}
+
+static void libera_args(Arg *args) {
+    while (args) {
+        Arg *next = args->next;
+        free(args);
+        args = next;
+    }
+}
+
+static int eh_escalar(const TypeDesc *t) {
+    return t->kind == K_INT || t->kind == K_FLOAT || t->kind == K_BOOL;
+}
+
+static void verifica_builtin(const Subprog *p, const Arg *args, int n_args, int linha) {
+    if (n_args != 1) {
+        erro_semantico(linha, "'%s' espera 1 argumento, mas recebeu %d", p->name, n_args);
+        return;
+    }
+    if (strcmp(p->name, "ler") == 0) {
+        if (!args->is_ref) {
+            erro_semantico(args->linha, "argumento de 'ler' exige 'ref'");
+        }
+        if (args->tipo->kind != K_ERRO && !eh_escalar(args->tipo)) {
+            char *st = type_str(args->tipo);
+            erro_semantico(args->linha, "'ler' espera tipo escalar, mas recebeu '%s'", st);
+            free(st);
+        }
+    } else if (strcmp(p->name, "escrever") == 0) {
+        if (args->is_ref) {
+            erro_semantico(args->linha, "argumento de 'escrever' não aceita 'ref'");
+        }
+        if (args->tipo->kind != K_ERRO && !eh_escalar(args->tipo)) {
+            char *st = type_str(args->tipo);
+            erro_semantico(args->linha, "'escrever' espera tipo escalar, mas recebeu '%s'", st);
+            free(st);
+        }
+    }
+}
+
+Atr verifica_chamada(const char *nome, Arg *args, int linha) {
+    char *args_cod = junta_args_cod(args);
+    char *cod = cod_fmt("%s(%s)", nome, args_cod);
+    Subprog *p = use_sub(nome, linha);
+    if (!p) {
+        libera_args(args);
+        return atr(cod, &type_erro, linha);
+    }
+
+    int n_args = 0;
+    for (Arg *a = args; a; a = a->next) n_args++;
+
+    if (p->is_builtin) {
+        verifica_builtin(p, args, n_args, linha);
+        libera_args(args);
+        return atr(cod, p->ret, linha);
+    }
+
+    if (n_args != p->n_params) {
+        erro_semantico(linha, "'%s' espera %d argumento(s), mas recebeu %d", nome, p->n_params, n_args);
+    }
+
+    Symbol *param = p->params;
+    Arg *arg = args;
+    for (int pos = 1; param && arg; pos++, param = param->next_param, arg = arg->next) {
+        if (param->is_ref && !arg->is_ref) {
+            erro_semantico(arg->linha, "argumento %d de '%s' exige 'ref'", pos, nome);
+        } else if (!param->is_ref && arg->is_ref) {
+            erro_semantico(arg->linha, "argumento %d de '%s' não é parâmetro 'ref'", pos, nome);
+        }
+
+        if (param->is_ref) {
+            if (param->type->kind != K_ERRO && arg->tipo->kind != K_ERRO && !type_equal(param->type, arg->tipo)) {
+                char *sp = type_str(param->type), *sa = type_str(arg->tipo);
+                erro_semantico(arg->linha, "argumento %d ('ref') de '%s' incompatível: esperado '%s', recebeu '%s'",
+                               pos, nome, sp, sa);
+                free(sp);
+                free(sa);
+            }
+        } else if (!tipo_atribuivel(param->type, arg->tipo)) {
+            char *sp = type_str(param->type), *sa = type_str(arg->tipo);
+            erro_semantico(arg->linha, "argumento %d de '%s' incompatível: esperado '%s', recebeu '%s'",
+                           pos, nome, sp, sa);
+            free(sp);
+            free(sa);
+        }
+    }
+
+    libera_args(args);
+    return atr(cod, p->ret, linha);
+}
+
+Atr verifica_chamada_expr(Atr ch) {
+    if (ch.tipo->kind == K_VOID) {
+        erro_semantico(ch.linha, "procedimento não pode ser usado em expressão");
+        return atr(ch.cod, &type_erro, ch.linha);
+    }
+    return ch;
+}
+
+void verifica_retorno(Subprog *sub, int tem_expr, Atr expr, int linha) {
+    if (!sub) return;
+    sub->has_return = 1;
+    if (!tem_expr) {
+        if (sub->is_func) {
+            erro_semantico(linha, "função '%s' exige valor no return", sub->name);
+        }
+        return;
+    }
+    if (!sub->is_func) {
+        erro_semantico(linha, "procedimento '%s' não pode retornar valor", sub->name);
+        return;
+    }
+    verifica_atribuicao(sub->ret, expr.tipo, expr.linha, "retorno");
+}
+
 void erro_semantico(int linha, const char *fmt, ...) {
     va_list ap;
     fprintf(stderr, "linha %d: erro semântico: ", linha);
@@ -173,13 +309,13 @@ int nome_livre(const char *nome, int linha) {
     return 1;
 }
 
-Symbol *declare_var(const char *name, Category category, TypeDesc *type, int is_out, int line) {
+Symbol *declare_var(const char *name, Category category, TypeDesc *type, int is_ref, int line) {
     if (!nome_livre(name, line)) {
         return NULL;
     }
 
     Scope *top = scope_level(scope_depth());
-    Symbol data = { .category = category, .type = type, .is_out = is_out, .line = line };
+    Symbol data = { .category = category, .type = type, .is_ref = is_ref, .line = line };
 
     return table_insert(top->name, name, data);  /* não falha: nome_livre já olhou o topo */
 }

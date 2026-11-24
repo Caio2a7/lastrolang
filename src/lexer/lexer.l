@@ -35,7 +35,7 @@ ident    {letra}({letra}|{digito}|_)*
 "break"       { return BREAK; }
 "continue"    { return CONTINUE; }
 "return"      { return RETURN; }
-"out"         { return OUT; }
+"ref"         { return REF; }
 "true"        { return TRUE; }
 "false"       { return FALSE; }
 

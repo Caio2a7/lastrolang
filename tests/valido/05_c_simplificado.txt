@@ -3,7 +3,7 @@
 const int N := 3;
 const bool LIGADO := true;
 
-proc dobra(out int x) {
+proc dobra(ref int x) {
     x := x * 2;
 }
 
@@ -11,7 +11,7 @@ proc zera_copia(int[N] v) {
     v[0] := 0;
 }
 
-proc zera(out int[N] v) {
+proc zera(ref int[N] v) {
     v[0] := 0;
 }
 
@@ -50,9 +50,9 @@ proc main() {
     }
     escrever(soma + 2);
     int a := 5;
-    dobra(out a);
+    dobra(ref a);
     escrever(a);
-    zera(out v);
+    zera(ref v);
     escrever(v[0]);
     bool b := !false || LIGADO && 1 > 2;
     if (b) {

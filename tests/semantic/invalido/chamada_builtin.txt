@@ -1,0 +1,9 @@
+proc main() {
+    int x := 1;
+    int[3] v := [0; 3];
+    ler(x);
+    ler();
+    ler(ref v);
+    escrever(ref x);
+    escrever(v);
+}

@@ -85,6 +85,49 @@ int main(void) {
     Atr nao_arr = verifica_indexacao("x", &s_int, atr("0", &type_int, 12), 12);
     assert(nao_arr.tipo == &type_erro && erros_semanticos() == e10 + 2);
 
+    /* Chamadas e retorno (#13): aridade, tipos (int -> float), ref, proc em expr, return */
+    type_init();
+    scope_push("global", NULL, 0);
+    Subprog *f_real = declare_sub("f_real", 1);
+    f_real->is_func = 1;
+    f_real->ret = &type_float;
+    scope_push("f_real", f_real, 0);
+    append_param(f_real, declare_var("a", C_PARAM, &type_float, 0, 1));
+    append_param(f_real, declare_var("b", C_PARAM, &type_float, 1, 1));
+    scope_pop();
+
+    Subprog *p_vazio = declare_sub("p_vazio", 2);
+    scope_pop();
+
+    int e13 = erros_semanticos();
+    /* int -> float por valor OK; float -> ref float OK */
+    Arg *a1 = arg_novo("1", &type_int, 0, 20);
+    a1->next = arg_novo("&y", &type_float, 1, 20);
+    Atr ch_ok = verifica_chamada("f_real", a1, 20);
+    assert(ch_ok.tipo == &type_float && erros_semanticos() == e13);
+
+    /* int -> ref float é erro (ponteiro incompatível) */
+    Arg *a2 = arg_novo("1.5", &type_float, 0, 21);
+    a2->next = arg_novo("&x", &type_int, 1, 21);
+    verifica_chamada("f_real", a2, 21);
+    assert(erros_semanticos() == e13 + 1);
+
+    /* proc em expressão gera erro e propaga type_erro */
+    Atr ch_proc = verifica_chamada("p_vazio", NULL, 22);
+    assert(ch_proc.tipo == &type_void && erros_semanticos() == e13 + 1);
+    Atr proc_expr = verifica_chamada_expr(ch_proc);
+    assert(proc_expr.tipo == &type_erro && erros_semanticos() == e13 + 2);
+
+    /* return: int -> float OK em func float; return; em func e return expr em proc são erro */
+    verifica_retorno(f_real, 1, atr("1", &type_int, 23), 23);
+    assert(erros_semanticos() == e13 + 2);
+    verifica_retorno(f_real, 0, atr("", &type_void, 24), 24);
+    assert(erros_semanticos() == e13 + 3);
+    verifica_retorno(p_vazio, 1, atr("1", &type_int, 25), 25);
+    assert(erros_semanticos() == e13 + 4);
+    verifica_retorno(p_vazio, 0, atr("", &type_void, 26), 26);
+    assert(erros_semanticos() == e13 + 4);
+
     puts("tipos: OK");
     return 0;
 }

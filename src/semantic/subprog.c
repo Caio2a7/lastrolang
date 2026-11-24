@@ -38,7 +38,7 @@ void sub_print(void) {
 
         for (Symbol *param = sub->params; param; param = param->next_param) {
             char *type = type_str(param->type);
-            printf("%s%s%s %s", param == sub->params ? "" : ", ", param->is_out ? "out " : "", type, param->name);
+            printf("%s%s%s %s", param == sub->params ? "" : ", ", param->is_ref ? "ref " : "", type, param->name);
             free(type);
         }
         printf(")\n");

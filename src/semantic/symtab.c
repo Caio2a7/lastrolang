@@ -111,14 +111,14 @@ void table_print(void) {
     static const char *category[] = {"var", "const", "param"};
 
     printf("Tabela de Símbolos:\n");
-    printf("%-24s %-6s %-10s %3s %5s\n", "Chave", "Categ", "Tipo", "Out", "Linha");
+    printf("%-24s %-6s %-10s %3s %5s\n", "Chave", "Categ", "Tipo", "Ref", "Linha");
     printf("--------------------------------------------------------------------------------\n");
 
     for (Entry *entry = symbols.first; entry; entry = entry->after) {
         Symbol *sym = entry->value;
         char *type = type_str(sym->type);
 
-        printf("%-24s %-6s %-10s %3d %5d\n", entry->key, category[sym->category], type, sym->is_out, sym->line);
+        printf("%-24s %-6s %-10s %3d %5d\n", entry->key, category[sym->category], type, sym->is_ref, sym->line);
         free(type);
     }
     putchar('\n');

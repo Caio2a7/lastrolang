@@ -1,0 +1,14 @@
+proc dobra(ref int x) {
+    x := x * 2;
+}
+
+func inc(int a) -> int {
+    return a + 1;
+}
+
+proc main() {
+    int v := 5;
+    dobra(v);
+    int r := inc(true);
+    int s := inc(ref v);
+}

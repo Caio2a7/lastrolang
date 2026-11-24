@@ -6,7 +6,7 @@ Compilador da linguagem **Lastro**, desenvolvido na disciplina DIM0548 – Engen
 
 ## A linguagem
 
-Lastro é uma linguagem imperativa, com tipagem estática e subprogramas com passagem de parâmetro por valor ou de saída (`out`).
+Lastro é uma linguagem imperativa, com tipagem estática e subprogramas com passagem de parâmetro por valor ou por referência (`ref`).
 
 ```
 const int MAX := 1000;
@@ -27,7 +27,7 @@ proc main() {
 
 - **Tipos:** `int`, `bool` e arrays de tamanho fixo (`int[MAX]`), inicializados com `[valor; tamanho]`.
 - **Constantes globais:** `const int MAX := 1000;`
-- **Subprogramas:** `proc` (sem retorno) e `func ... -> tipo`. Parâmetros `out` são alterados pelo subprograma chamado e marcados também na chamada: `ler(out n)`.
+- **Subprogramas:** `proc` (sem retorno) e `func ... -> tipo`. Parâmetros `ref` são passados por referência (alteram a variável do chamador) e marcados também na chamada: `ler(ref n)`.
 - **Comandos:** declaração com inicialização obrigatória, atribuição, chamada, `if` / `else if` / `else`, `while`, `for (int i := a to b)`, `break`, `continue` e `return`.
 - **Comentários:** `//` até o fim da linha.
 
@@ -87,11 +87,11 @@ O C gerado não usa `while`, `for` nem `else`: todo controle de fluxo vira `if (
 | `bool`, `true`, `false` | `int`, `1`, `0` |
 | `:=` / `=` | `=` / `==`, com parênteses em toda operação |
 | `proc main()` | `int main(void)`, terminando em `return 0;` |
-| `out int x` | `int *x`, usado como `(*x)` e passado como `&x` |
-| `int[N] v` sem `out` | cópia local com `memcpy`, então o chamador não muda |
+| `ref int x` | `int *x`, usado como `(*x)` e passado como `&x` |
+| `int[N] v` sem `ref` | cópia local com `memcpy`, então o chamador não muda |
 | `[e; n]` | `e` calculado uma vez e laço de preenchimento com `goto` |
 | `for (int i := a to b)` | bloco com `i <= b`, `b` calculado uma vez |
-| `ler(out x)`, `escrever(e)` | funções embutidas no topo do C, sobre `scanf`/`printf` |
+| `ler(ref x)`, `escrever(e)` | funções embutidas no topo do C, sobre `scanf`/`printf` |
 
 ## Estrutura
 
