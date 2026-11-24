@@ -64,14 +64,34 @@ Requisitos: `gcc`, `flex` e `bison` (chamado como `yacc`), e `make`.
 
 ```sh
 make                                  # gera build/compilador
-./build/compilador < programa.txt     # analisa um programa
-./build/compilador -t < programa.txt  # analisa exibindo o trace da derivação (shift/reduce)
-make test                             # roda os programas de tests/valido e tests/invalido
+./build/compilador < programa.txt > programa.c   # traduz para C simplificado
+./build/compilador -t < programa.txt  # traduz exibindo o trace da derivação (shift/reduce) em stderr
+./build/compilador -s < programa.txt  # imprime as tabelas de tipos, subprogramas e símbolos no lugar do C
+make run P=tests/valido/03_funcao_juros.txt  # traduz, compila com gcc -Wall -Werror e executa
+make test                             # válidos passam pelo gcc; inválidos têm de dar erro
 make conflitos                        # resume os conflitos do autômato LALR (build/y.output)
 make clean                            # remove build/
 ```
 
 Erros são reportados com a linha e o token onde foram detectados, por exemplo `linha 2: syntax error perto de '='`. O código de saída é 0 quando o programa é aceito e 1 quando há erro.
+
+O C só é escrito em stdout quando o programa é aceito; erros e o ACEITO/REJEITADO vão para stderr.
+
+### C simplificado
+
+O C gerado não usa `while`, `for` nem `else`: todo controle de fluxo vira `if (!cond) goto _Ln;` e rótulos `_Ln: ;`. `break` e `continue` são `goto` para os rótulos do laço mais interno. Os demais pontos da tradução:
+
+| Lastro | C gerado |
+|---|---|
+| `const int MAX := 1000;` | `#define MAX 1000` |
+| `bool`, `true`, `false` | `int`, `1`, `0` |
+| `:=` / `=` | `=` / `==`, com parênteses em toda operação |
+| `proc main()` | `int main(void)`, terminando em `return 0;` |
+| `out int x` | `int *x`, usado como `(*x)` e passado como `&x` |
+| `int[N] v` sem `out` | cópia local com `memcpy`, então o chamador não muda |
+| `[e; n]` | `e` calculado uma vez e laço de preenchimento com `goto` |
+| `for (int i := a to b)` | bloco com `i <= b`, `b` calculado uma vez |
+| `ler(out x)`, `escrever(e)` | funções embutidas no topo do C, sobre `scanf`/`printf` |
 
 ## Estrutura
 

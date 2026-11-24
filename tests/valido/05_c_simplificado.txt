@@ -1,0 +1,75 @@
+// Cobre a tradução para C simplificado. Saída esperada (uma por linha):
+// 5 5 9 10 0 1 7 2 3 1 1 24
+const int N := 3;
+const bool LIGADO := true;
+
+proc dobra(out int x) {
+    x := x * 2;
+}
+
+proc zera_copia(int[N] v) {
+    v[0] := 0;
+}
+
+proc zera(out int[N] v) {
+    v[0] := 0;
+}
+
+func fat(int n) -> int {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * fat(n - 1);
+}
+
+func classifica(int x) -> int {
+    if (x < 0) {
+        return 0;
+    } else if (x = 0) {
+        return 1;
+    } else {
+        return 2;
+    }
+}
+
+proc main() {
+    int[N] v := [5; N];
+    zera_copia(v);
+    escrever(v[0]);
+    int[N] w := v;
+    escrever(w[2]);
+    int soma := 0;
+    for (int i := 1 to 10) {
+        if (i = 3) {
+            continue;
+        }
+        if (i > 4) {
+            break;
+        }
+        soma := soma + i;
+    }
+    escrever(soma + 2);
+    int a := 5;
+    dobra(out a);
+    escrever(a);
+    zera(out v);
+    escrever(v[0]);
+    bool b := !false || LIGADO && 1 > 2;
+    if (b) {
+        escrever(1);
+    }
+    int k := 0;
+    while (true) {
+        k := k + 1;
+        if (k = 7) {
+            break;
+        }
+    }
+    escrever(k);
+    escrever(classifica(5));
+    escrever(N);
+    escrever(classifica(0));
+    escrever(- -1);
+    escrever(fat(4));
+    return;
+}

@@ -20,9 +20,15 @@ $(BUILD)/lex.yy.c: src/lexer/lexer.l $(BUILD)/y.tab.h | $(BUILD)
 $(BUILD):
 	mkdir -p $@
 
+# Gera o C, compila com gcc -Wall -Werror e executa: make run P=tests/valido/03_funcao_juros.txt
+run: all
+	./$(TARGET) < $(P) > $(BUILD)/programa.c
+	$(CC) -Wall -Werror -o $(BUILD)/programa $(BUILD)/programa.c
+	./$(BUILD)/programa
+
 test: all
-	@echo "== Casos válidos =="
-	@for f in tests/valido/*.txt; do echo "-- $$f --"; ./$(TARGET) < $$f; echo; done
+	@echo "== Casos válidos (C gerado tem de compilar com gcc -Wall -Werror) =="
+	@for f in tests/valido/*.txt; do echo "-- $$f --"; ./$(TARGET) < $$f > $(BUILD)/teste.c && $(CC) -Wall -Werror -o $(BUILD)/teste $(BUILD)/teste.c && echo "gcc: OK"; echo; done
 	@echo "== Casos inválidos (devem dar erro) =="
 	@for f in tests/invalido/*.txt; do echo "-- $$f --"; ./$(TARGET) < $$f; echo; done
 	@echo "== Casos semânticos inválidos (devem dar erro) =="
@@ -41,4 +47,4 @@ conflitos: $(BUILD)/y.tab.c
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: all test test-tabelas conflitos clean
+.PHONY: all run test test-tabelas conflitos clean

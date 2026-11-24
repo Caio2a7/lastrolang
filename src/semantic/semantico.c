@@ -41,7 +41,7 @@ char *cod_fmt(const char *fmt, ...) {
 }
 
 Atr atr_bin(Atr a, const char *op_c, Atr b, Op op) {
-    return atr(cod_fmt("%s %s %s", a.cod, op_c, b.cod),
+    return atr(cod_fmt("(%s %s %s)", a.cod, op_c, b.cod),
                tipo_resultado(op, a.tipo, b.tipo), a.linha);
 }
 
