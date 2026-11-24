@@ -12,7 +12,7 @@ static int eh_numerico(const TypeDesc *t) {
 }
 
 Atr atr(char *cod, TypeDesc *tipo, int linha) {
-    Atr a = { cod, tipo, linha };
+    Atr a = { cod, tipo, linha, 0 };
     return a;
 }
 
@@ -104,6 +104,42 @@ Atr atr_un(const char *op_c, Atr a, Op op) {
         free(sa);
     }
     return atr(cod, res, a.linha);
+}
+
+int tipo_atribuivel(const TypeDesc *destino, const TypeDesc *origem) {
+    if (destino->kind == K_ERRO || origem->kind == K_ERRO) return 1;
+    if (destino->kind == K_VOID || origem->kind == K_VOID) return 0;
+    if (type_equal(destino, origem)) return 1;
+    return destino->kind == K_FLOAT && origem->kind == K_INT;
+}
+
+int verifica_atribuicao(const TypeDesc *destino, const TypeDesc *origem, int linha, const char *ctx) {
+    if (tipo_atribuivel(destino, origem)) return 1;
+    char *sd = type_str(destino), *so = type_str(origem);
+    erro_semantico(linha, "%s incompatível: esperado '%s', recebeu '%s'", ctx, sd, so);
+    free(sd);
+    free(so);
+    return 0;
+}
+
+Atr verifica_indexacao(const char *nome, Symbol *s, Atr idx, int linha) {
+    char *cod = cod_fmt("%s[%s]", nome, idx.cod);
+    if (idx.tipo->kind != K_ERRO && idx.tipo->kind != K_INT) {
+        char *si = type_str(idx.tipo);
+        erro_semantico(idx.linha, "índice de '%s' tem de ser 'int', mas recebeu '%s'", nome, si);
+        free(si);
+    }
+    TypeDesc *t = s ? s->type : &type_erro;
+    if (t->kind == K_ERRO) return atr(cod, &type_erro, linha);
+    if (t->kind != K_ARRAY) {
+        char *st = type_str(t);
+        erro_semantico(linha, "'%s' não é array (tipo '%s')", nome, st);
+        free(st);
+        return atr(cod, &type_erro, linha);
+    }
+    Atr res = atr(cod, t->elem, linha);
+    res.eh_const = (s->category == C_CONST);
+    return res;
 }
 
 void erro_semantico(int linha, const char *fmt, ...) {

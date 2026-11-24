@@ -1,0 +1,6 @@
+proc main() {
+    int[3] v := [0; 3];
+    int x := 1;
+    v[true] := 1;
+    x[0] := 1;
+}
