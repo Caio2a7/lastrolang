@@ -19,7 +19,7 @@ typedef struct Symbol {
     char *name, *scope;
     Category category;
     TypeDesc *type;             // Tipo (int, bool, int[10], registro...)
-    int is_out;                 // Indica se o parâmetro é de saída (out)
+    int is_ref;                 // Indica se o parâmetro é por referência (ref)
     long value;                 // Constante: valor do literal (usado no tamanho de array)
     int line;
     struct Symbol *next_param;  // Parâmetro: próximo na ordem da assinatura

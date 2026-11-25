@@ -42,6 +42,27 @@ int verifica_atribuicao(const TypeDesc *destino, const TypeDesc *origem, int lin
 /* Verifica indexação nome[idx]: exige array e índice int; devolve o atributo do elemento. */
 Atr verifica_indexacao(const char *nome, Symbol *s, Atr idx, int linha);
 
+/* Argumento de chamada em lista encadeada, na ordem da esquerda para a direita. */
+typedef struct Arg {
+    char *cod;
+    TypeDesc *tipo;
+    int is_ref;
+    int linha;
+    struct Arg *next;
+} Arg;
+
+/* Cria um nó de argumento para a lista de argumentos de uma chamada. */
+Arg *arg_novo(char *cod, TypeDesc *tipo, int is_ref, int linha);
+
+/* Verifica chamada de subprograma (existência, aridade, tipos, ref e embutidos). */
+Atr verifica_chamada(const char *nome, Arg *args, int linha);
+
+/* Rejeita uso de procedimento (retorno void) dentro de expressão. */
+Atr verifica_chamada_expr(Atr ch);
+
+/* Verifica comando return em proc (sem valor) e func (com valor compatível). */
+void verifica_retorno(Subprog *sub, int tem_expr, Atr expr, int linha);
+
 /* printf que devolve texto C em memória recém-alocada. */
 char *cod_fmt(const char *fmt, ...);
 
@@ -58,7 +79,7 @@ int erros_semanticos(void);
 int nome_livre(const char *nome, int linha);
 
 /* Declara variável, constante ou parâmetro no escopo do topo; NULL se o nome não estiver livre. */
-Symbol *declare_var(const char *name, Category category, TypeDesc *type, int is_out, int line);
+Symbol *declare_var(const char *name, Category category, TypeDesc *type, int is_ref, int line);
 
 /* Símbolo visível com esse nome; NULL (com erro reportado) se não houver. */
 Symbol *use_var(const char *name, int line);

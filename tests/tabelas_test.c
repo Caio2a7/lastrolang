@@ -50,7 +50,7 @@ int main(void) {
     append_param(f, declare_var("b", C_PARAM, &type_bool, 1, 1));
     assert(f->n_params == 2);
     assert(strcmp(f->params->name, "a") == 0 && strcmp(f->params->next_param->name, "b") == 0);
-    assert(f->params->next_param->is_out == 1);
+    assert(f->params->next_param->is_ref == 1);
 
     /* Pilha: o bloco herda o dono e o is_loop */
     scope_push_block(1);

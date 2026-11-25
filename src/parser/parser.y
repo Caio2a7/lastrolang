@@ -20,6 +20,7 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
     int num;
     TypeDesc *type;
     Atr atr;   /* atributo sintetizado das expressões: (texto C, tipo, linha) */
+    Arg *arg;  /* lista de argumentos de uma chamada */
 }
 
 %type <type> tipo tipo_base tipo_prim
@@ -30,12 +31,13 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
 %token <str> TYPE_ID
 
 %type <atr> expr conj rel soma termo fator literal alvo chamada
-%type <str> op_rel args arg
+%type <arg> args arg
+%type <str> op_rel
 %type <str> consts decl_const subprogs subprog corpo bloco bloco_laco fecha_bloco
 %type <str> cmds cmd decl_var atrib if_stmt while_stmt for_stmt
 
 %token CONST PROC FUNC INT BOOL IF ELSE WHILE FOR TO
-%token SWITCH CASE DEFAULT BREAK CONTINUE RETURN OUT TRUE FALSE
+%token SWITCH CASE DEFAULT BREAK CONTINUE RETURN REF TRUE FALSE
 
 %token ASSIGN EQ NEQ LT LE GT GE
 %token PLUS MINUS STAR SLASH
@@ -77,12 +79,21 @@ subprogs
 subprog
     : PROC assinatura corpo             { scope_pop(); $$ = current_sub ? gen_sub(current_sub, $3) : ""; }
     | FUNC assinatura ARROW tipo        {
+            if ($4->kind == K_ARRAY) {
+                erro_semantico(yylineno, "função não pode retornar array; use parâmetro 'ref'");
+            }
             if (current_sub) {  /* o escopo aponta para current_sub, então o return já enxerga o tipo */
                 current_sub->is_func = 1;
-                current_sub->ret = $4;
+                current_sub->ret = $4->kind == K_ARRAY ? &type_erro : $4;
             }
         }
-        corpo                           { scope_pop(); $$ = current_sub ? gen_sub(current_sub, $6) : ""; }
+        corpo                           {
+            if (current_sub && !current_sub->has_return) {
+                erro_semantico(yylineno, "função '%s' não possui comando return", current_sub->name);
+            }
+            scope_pop();
+            $$ = current_sub ? gen_sub(current_sub, $6) : "";
+        }
     ;
 
 assinatura
@@ -105,7 +116,7 @@ params
 
 param
     : tipo ID       { append_param(current_sub, declare_var($2, C_PARAM, $1, 0, yylineno)); }
-    | OUT tipo ID   { append_param(current_sub, declare_var($3, C_PARAM, $2, 1, yylineno)); }
+    | REF tipo ID   { append_param(current_sub, declare_var($3, C_PARAM, $2, 1, yylineno)); }
     ;
 
 tipo
@@ -193,10 +204,16 @@ cmd
             $$ = l ? cod_fmt("goto _L%d;\n", l->cont) : "";
         }
     | RETURN SEMI       {
-            int main_proc = current_sub && !current_sub->is_func && strcmp(current_sub->name, "main") == 0;
+            Subprog *dono = scope_level(scope_depth())->owner;
+            verifica_retorno(dono, 0, atr("", &type_void, yylineno), yylineno);
+            int main_proc = dono && !dono->is_func && strcmp(dono->name, "main") == 0;
             $$ = main_proc ? "return 0;\n" : "return;\n";  /* proc main vira int main */
         }
-    | RETURN expr SEMI  { $$ = cod_fmt("return %s;\n", $2.cod); }
+    | RETURN expr SEMI  {
+            Subprog *dono = scope_level(scope_depth())->owner;
+            verifica_retorno(dono, 1, $2, yylineno);
+            $$ = cod_fmt("return %s;\n", $2.cod);
+        }
     ;
 
 /* declare_var depois do inicializador: "int x := x" acusa x não declarado */
@@ -231,8 +248,8 @@ alvo
     /* tipo vem da tabela de símbolos; não declarado => type_erro (erro já reportado por use_var) */
     : ID    {
             Symbol *s = use_var($1, yylineno);
-            /* parâmetro out escalar é ponteiro no C */
-            int ptr = s && s->category == C_PARAM && s->is_out && s->type->kind != K_ARRAY;
+            /* parâmetro ref escalar é ponteiro no C */
+            int ptr = s && s->category == C_PARAM && s->is_ref && s->type->kind != K_ARRAY;
             $$ = atr(ptr ? cod_fmt("(*%s)", $1) : $1, s ? s->type : &type_erro, yylineno);
             $$.eh_const = s && s->category == C_CONST;
         }
@@ -244,28 +261,23 @@ alvo
 
 /* chamada consulta só a tabela de subprogramas: x() com x variável é erro */
 chamada
-    : ID LPAREN RPAREN {
-            Subprog *p = use_sub($1, yylineno);
-            $$ = atr(cod_fmt("%s()", $1), p ? p->ret : &type_erro, yylineno);
-        }
-    | ID LPAREN args RPAREN {
-            Subprog *p = use_sub($1, yylineno);
-            $$ = atr(cod_fmt("%s(%s)", $1, $3), p ? p->ret : &type_erro, yylineno);
-        }
+    : ID LPAREN RPAREN      { $$ = verifica_chamada($1, NULL, yylineno); }
+    | ID LPAREN args RPAREN { $$ = verifica_chamada($1, $3, yylineno); }
     ;
 
 args
     : arg
-    | arg COMMA args  { $$ = cod_fmt("%s, %s", $1, $3); }
+    | arg COMMA args  { $1->next = $3; $$ = $1; }
     ;
 
 arg
-    : expr     { $$ = $1.cod; }
-    /* out = passagem por referência: ponteiro no C; array já é ponteiro */
-    | OUT alvo {
+    : expr     { $$ = arg_novo($1.cod, $1.tipo, 0, $1.linha); }
+    /* ref = passagem por referência: ponteiro no C; array já é ponteiro */
+    | REF alvo {
             if ($2.eh_const)
-                erro_semantico($2.linha, "constante '%s' não pode ser passada como 'out'", $2.cod);
-            $$ = $2.tipo->kind == K_ARRAY ? $2.cod : cod_fmt("&%s", $2.cod);
+                erro_semantico($2.linha, "constante '%s' não pode ser passada como 'ref'", $2.cod);
+            char *cod = $2.tipo->kind == K_ARRAY ? $2.cod : cod_fmt("&%s", $2.cod);
+            $$ = arg_novo(cod, $2.tipo, 1, $2.linha);
         }
     ;
 
@@ -338,7 +350,7 @@ termo
 fator
     : literal
     | alvo
-    | chamada
+    | chamada             { $$ = verifica_chamada_expr($1); }
     | LPAREN expr RPAREN  { $$ = $2; }  /* atr_bin já pôs os parênteses */
     | MINUS fator         { $$ = atr_un("-", $2, OP_ARITMETICO); }
     | NOT fator           { $$ = atr_un("!", $2, OP_LOGICO); }

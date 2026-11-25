@@ -1,0 +1,9 @@
+proc aviso() {
+    escrever(1);
+}
+
+proc main() {
+    int x := aviso();
+    int y := aviso() + 1;
+    escrever(aviso());
+}
