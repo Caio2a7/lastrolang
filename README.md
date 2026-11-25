@@ -1,4 +1,4 @@
-# Lastro
+# LastroLang
 
 Compilador da linguagem **Lastro**, desenvolvido na disciplina DIM0548 – Engenharia de Linguagens (UFRN/DIMAp). O compilador lê um programa Lastro e o traduz para C; o `gcc` transforma esse C em executável.
 
