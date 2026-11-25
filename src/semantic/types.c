@@ -15,8 +15,8 @@ static HashMap types; // Tabela de tipos
 
 void type_init(void) {
     hm_put(&types, "int", &type_int);
+    hm_put(&types, "float", &type_float);
     hm_put(&types, "bool", &type_bool);
-    /* float entra aqui com a #11 */
 }
 
 TypeDesc *type_insert(const char *name, TypeDesc data) {

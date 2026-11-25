@@ -26,7 +26,7 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
 %type <type> tipo tipo_base tipo_prim
 %type <num> tamanho
 
-%token <str> ID LITERAL_INT
+%token <str> ID LITERAL_INT LITERAL_FLOAT
 /* nome que está na tabela de tipos; o léxico decide entre ID e TYPE_ID */
 %token <str> TYPE_ID
 
@@ -36,7 +36,7 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
 %type <str> consts decl_const subprogs subprog corpo bloco bloco_laco fecha_bloco
 %type <str> cmds cmd decl_var atrib if_stmt while_stmt for_stmt
 
-%token CONST PROC FUNC INT BOOL IF ELSE WHILE FOR TO
+%token CONST PROC FUNC INT FLOAT BOOL IF ELSE WHILE FOR TO
 %token SWITCH CASE DEFAULT BREAK CONTINUE RETURN REF TRUE FALSE
 
 %token ASSIGN EQ NEQ LT LE GT GE
@@ -67,7 +67,7 @@ decl_const
             verifica_atribuicao($2, $5.tipo, $5.linha, "constante");
             Symbol *s = declare_var($3, C_CONST, $2, 0, yylineno);
             if (s) s->value = strtol($5.cod, NULL, 10);  /* usado em int[MAX] */
-            $$ = cod_fmt("#define %s %s\n", $3, $5.cod);  /* constante de compilação, serve de tamanho */
+            $$ = cod_fmt("#define %s %s\n", $3, coage($5, $2).cod);  /* constante de compilação, serve de tamanho */
         }
     ;
 
@@ -131,6 +131,7 @@ tipo_base
 
 tipo_prim
     : INT   { $$ = &type_int; }
+    | FLOAT { $$ = &type_float; }
     | BOOL  { $$ = &type_bool; }
     ;
 
@@ -212,7 +213,7 @@ cmd
     | RETURN expr SEMI  {
             Subprog *dono = scope_level(scope_depth())->owner;
             verifica_retorno(dono, 1, $2, yylineno);
-            $$ = cod_fmt("return %s;\n", $2.cod);
+            $$ = cod_fmt("return %s;\n", (dono && dono->is_func ? coage($2, dono->ret) : $2).cod);
         }
     ;
 
@@ -221,7 +222,7 @@ decl_var
     : tipo ID ASSIGN expr SEMI  {
             verifica_atribuicao($1, $4.tipo, $4.linha, "inicialização");
             declare_var($2, C_VAR, $1, 0, yylineno);
-            $$ = gen_decl($1, $2, $4);
+            $$ = gen_decl($1, $2, coage($4, $1));
         }
     | tipo ID ASSIGN LBRACKET expr SEMI tamanho RBRACKET SEMI {
             declare_var($2, C_VAR, $1, 0, yylineno);
@@ -230,7 +231,7 @@ decl_var
                     erro_semantico(yylineno, "'%s' tem %d elementos, mas o inicializador tem %d", $2, $1->size, $7);
                 verifica_atribuicao($1->elem, $5.tipo, $5.linha, "inicializador de array");
             }
-            $$ = gen_decl_preenche($1, $2, $5, yylineno);
+            $$ = gen_decl_preenche($1, $2, $1->kind == K_ARRAY ? coage($5, $1->elem) : $5, yylineno);
         }
     ;
 
@@ -240,7 +241,7 @@ atrib
                 erro_semantico($1.linha, "não é possível atribuir à constante '%s'", $1.cod);
             else
                 verifica_atribuicao($1.tipo, $3.tipo, $1.linha, "atribuição");
-            $$ = gen_atrib($1, $3);
+            $$ = gen_atrib($1, coage($3, $1.tipo));
         }
     ;
 
@@ -357,7 +358,8 @@ fator
     ;
 
 literal
-    : LITERAL_INT  { $$ = atr($1, &type_int, yylineno); }
+    : LITERAL_INT    { $$ = atr($1, &type_int, yylineno); }
+    | LITERAL_FLOAT  { $$ = atr($1, &type_float, yylineno); }
     | TRUE         { $$ = atr(cod_fmt("1"), &type_bool, yylineno); }  /* bool vira int no C */
     | FALSE        { $$ = atr(cod_fmt("0"), &type_bool, yylineno); }
     ;

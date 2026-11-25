@@ -36,6 +36,10 @@ TypeDesc *tipo_resultado(Op op, TypeDesc *a, TypeDesc *b);
  * float -> int e void são rejeitados. */
 int tipo_atribuivel(const TypeDesc *destino, const TypeDesc *origem);
 
+/* Coerção int -> float: se destino é float e e é int, devolve "((double)e)" com tipo float.
+ * Nos demais casos devolve e sem mudança. */
+Atr coage(Atr e, const TypeDesc *destino);
+
 /* Verifica atribuição/inicialização; reporta erro em 'linha' se incompatível. */
 int verifica_atribuicao(const TypeDesc *destino, const TypeDesc *origem, int linha, const char *ctx);
 

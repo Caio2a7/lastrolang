@@ -76,10 +76,14 @@ char *cod_fmt(const char *fmt, ...) {
     return s;
 }
 
+Atr coage(Atr e, const TypeDesc *destino) {
+    if (destino->kind != K_FLOAT || e.tipo->kind != K_INT) return e;
+    return atr(cod_fmt("((double)%s)", e.cod), &type_float, e.linha);
+}
+
 Atr atr_bin(Atr a, const char *op_c, Atr b, Op op) {
-    char *cod = cod_fmt("(%s %s %s)", a.cod, op_c, b.cod);
     if (a.tipo->kind == K_ERRO || b.tipo->kind == K_ERRO) {
-        return atr(cod, &type_erro, a.linha);
+        return atr(cod_fmt("(%s %s %s)", a.cod, op_c, b.cod), &type_erro, a.linha);
     }
     TypeDesc *res = tipo_resultado(op, a.tipo, b.tipo);
     if (res->kind == K_ERRO) {
@@ -89,7 +93,12 @@ Atr atr_bin(Atr a, const char *op_c, Atr b, Op op) {
         free(sa);
         free(sb);
     }
-    return atr(cod, res, a.linha);
+    TypeDesc *comum = &type_erro;
+    if (compativel(a.tipo, b.tipo, &comum)) {  /* int op float: o int vira double no C */
+        a = coage(a, comum);
+        b = coage(b, comum);
+    }
+    return atr(cod_fmt("(%s %s %s)", a.cod, op_c, b.cod), res, a.linha);
 }
 
 Atr atr_un(const char *op_c, Atr a, Op op) {
@@ -202,11 +211,17 @@ static void verifica_builtin(const Subprog *p, const Arg *args, int n_args, int 
     }
 }
 
+/* Nome C do embutido: C não tem sobrecarga, então cada tipo tem a sua função no prólogo. */
+static const char *nome_c_builtin(const char *nome, const Arg *args) {
+    int eh_float = args && args->tipo->kind == K_FLOAT;
+    if (strcmp(nome, "ler") == 0) return eh_float ? "ler_float" : "ler_int";
+    return eh_float ? "escrever_float" : "escrever_int";
+}
+
 Atr verifica_chamada(const char *nome, Arg *args, int linha) {
-    char *args_cod = junta_args_cod(args);
-    char *cod = cod_fmt("%s(%s)", nome, args_cod);
     Subprog *p = use_sub(nome, linha);
     if (!p) {
+        char *cod = cod_fmt("%s(%s)", nome, junta_args_cod(args));
         libera_args(args);
         return atr(cod, &type_erro, linha);
     }
@@ -216,6 +231,7 @@ Atr verifica_chamada(const char *nome, Arg *args, int linha) {
 
     if (p->is_builtin) {
         verifica_builtin(p, args, n_args, linha);
+        char *cod = cod_fmt("%s(%s)", nome_c_builtin(nome, args), junta_args_cod(args));
         libera_args(args);
         return atr(cod, p->ret, linha);
     }
@@ -247,9 +263,12 @@ Atr verifica_chamada(const char *nome, Arg *args, int linha) {
                            pos, nome, sp, sa);
             free(sp);
             free(sa);
+        } else {  /* por valor: int em parâmetro float vira (double) no C */
+            arg->cod = coage(atr(arg->cod, arg->tipo, arg->linha), param->type).cod;
         }
     }
 
+    char *cod = cod_fmt("%s(%s)", nome, junta_args_cod(args));
     libera_args(args);
     return atr(cod, p->ret, linha);
 }

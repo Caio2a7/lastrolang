@@ -13,8 +13,11 @@ const char *gen_prologo =
     "#pragma GCC diagnostic ignored \"-Wunused-but-set-variable\"\n"
     "#pragma GCC diagnostic ignored \"-Wunused-label\"\n"
     "\n"
-    "static inline void ler(int *x) { if (scanf(\"%d\", x) != 1) exit(1); }\n"
-    "static inline void escrever(int x) { printf(\"%d\\n\", x); }\n"
+    "/* Embutidos: um por tipo, porque C não tem sobrecarga. float é double no C. */\n"
+    "static inline void ler_int(int *x) { if (scanf(\"%d\", x) != 1) exit(1); }\n"
+    "static inline void ler_float(double *x) { if (scanf(\"%lf\", x) != 1) exit(1); }\n"
+    "static inline void escrever_int(int x) { printf(\"%d\\n\", x); }\n"
+    "static inline void escrever_float(double x) { printf(\"%g\\n\", x); }\n"
     "\n";
 
 /* Número novo e único no programa: nomeia rótulos (_L3) e temporários (_t4).

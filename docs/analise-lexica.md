@@ -9,7 +9,7 @@ A especificação parte de três definições auxiliares: `digito = [0-9]`, `let
 | Classe | Lexema ou expressão regular | Token |
 |---|---|---|
 | Palavra reservada | `const` `proc` `func` | `CONST` `PROC` `FUNC` |
-| Palavra reservada | `int` `bool` | `INT` `BOOL` |
+| Palavra reservada | `int` `float` `bool` | `INT` `FLOAT` `BOOL` |
 | Palavra reservada | `if` `else` `while` `for` `to` | `IF` `ELSE` `WHILE` `FOR` `TO` |
 | Palavra reservada | `switch` `case` `default` | `SWITCH` `CASE` `DEFAULT` |
 | Palavra reservada | `break` `continue` `return` `ref` | `BREAK` `CONTINUE` `RETURN` `REF` |
@@ -21,13 +21,14 @@ A especificação parte de três definições auxiliares: `digito = [0-9]`, `let
 | Tipo de retorno | `->` | `ARROW` |
 | Delimitador | `(` `)` `[` `]` `{` `}` | `LPAREN` `RPAREN` `LBRACKET` `RBRACKET` `LBRACE` `RBRACE` |
 | Separador | `,` `;` `.` | `COMMA` `SEMI` `DOT` |
+| Literal real | `{digito}+"."{digito}+` | `LITERAL_FLOAT` |
 | Literal inteiro | `{digito}+` | `LITERAL_INT` |
 | Identificador | `{ident}` | `ID` |
 | Erro | `.` (qualquer outro caractere) | `ERRO` |
 
-A linguagem tem 19 palavras reservadas, todas em minúsculas. Como ela diferencia maiúsculas de minúsculas, `If` e `WHILE` são identificadores comuns. `ler` e `escrever` também são identificadores: chegam ao parser como `ID` e entram na tabela de símbolos como subprogramas embutidos, de modo que a análise semântica confere uma chamada a eles do mesmo jeito que confere qualquer outra.
+A linguagem tem 20 palavras reservadas, todas em minúsculas. Como ela diferencia maiúsculas de minúsculas, `If` e `WHILE` são identificadores comuns. `ler` e `escrever` também são identificadores: chegam ao parser como `ID` e entram na tabela de símbolos como subprogramas embutidos, de modo que a análise semântica confere uma chamada a eles do mesmo jeito que confere qualquer outra.
 
-Todo identificador começa com uma letra ASCII e continua com letras, dígitos ou sublinhado. Deixamos as letras acentuadas de fora porque o código de sistemas financeiros conversa com bibliotecas C e com sistemas legados (Problema 1), e um nome como `preço` não teria equivalente direto no C gerado. O literal inteiro é uma sequência de dígitos, sem sinal. Em `-5`, o `-` é o operador unário da gramática. A linguagem só tem literais inteiros e lógicos, de acordo com a decisão do Problema 1 de guardar valores monetários como inteiros (em centavos ou pontos-base, por exemplo) para eliminar o erro de arredondamento.
+Todo identificador começa com uma letra ASCII e continua com letras, dígitos ou sublinhado. Deixamos as letras acentuadas de fora porque o código de sistemas financeiros conversa com bibliotecas C e com sistemas legados (Problema 1), e um nome como `preço` não teria equivalente direto no C gerado. O literal inteiro é uma sequência de dígitos, sem sinal. Em `-5`, o `-` é o operador unário da gramática. O literal real exige dígitos dos dois lados do ponto (`2.5`; `2.` e `.5` não são aceitos). Em `2.5`, as regras de inteiro e de real casam ao mesmo tempo, e o casamento mais longo escolhe `LITERAL_FLOAT`. Valores monetários continuam sendo guardados como inteiros (em centavos ou pontos-base), como decidido no Problema 1. O `float` existe para os cálculos não monetários e para a coerção de `int` para `float` exigida na avaliação.
 
 O léxico já reconhece `SWITCH`, `CASE`, `DEFAULT` e `DOT`, mas a gramática ainda não usa esses tokens em nenhuma produção. Eles ficam reservados para o comando `switch` e para o acesso a campo de registro, e o yacc os aponta como terminais não usados. Quando um deles aparece num programa, o léxico o aceita e o parser acusa erro de sintaxe.
 
@@ -51,7 +52,7 @@ linha 3: syntax error perto de '@'
 REJEITADO: programa contém erro
 ```
 
-Dois dos erros previstos no Problema 6 formam sequências de tokens válidas e por isso passam pelo léxico. Quem os detecta é o parser. O literal fracionário `10.50` vira `LITERAL_INT DOT LITERAL_INT`, e a mensagem é `syntax error perto de '.'`. O literal mal formado `3x` vira `LITERAL_INT ID`, com a mensagem `syntax error perto de 'x'`. Nos dois casos o programa é rejeitado na linha certa.
+Dois dos erros previstos no Problema 6 formam sequências de tokens válidas e por isso passam pelo léxico. Quem os detecta é o parser. O literal fracionário incompleto `10.` vira `LITERAL_INT DOT`, e a mensagem é `syntax error perto de '.'`. O literal mal formado `3x` vira `LITERAL_INT ID`, com a mensagem `syntax error perto de 'x'`. Nos dois casos o programa é rejeitado na linha certa.
 
 ## Limitações
 

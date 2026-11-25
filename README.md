@@ -85,13 +85,14 @@ O C gerado não usa `while`, `for` nem `else`: todo controle de fluxo vira `if (
 |---|---|
 | `const int MAX := 1000;` | `#define MAX 1000` |
 | `bool`, `true`, `false` | `int`, `1`, `0` |
+| `float` | `double`; a coerção de `int` aparece como `((double)x)` |
 | `:=` / `=` | `=` / `==`, com parênteses em toda operação |
 | `proc main()` | `int main(void)`, terminando em `return 0;` |
 | `ref int x` | `int *x`, usado como `(*x)` e passado como `&x` |
 | `int[N] v` sem `ref` | cópia local com `memcpy`, então o chamador não muda |
 | `[e; n]` | `e` calculado uma vez e laço de preenchimento com `goto` |
 | `for (int i := a to b)` | bloco com `i <= b`, `b` calculado uma vez |
-| `ler(ref x)`, `escrever(e)` | funções embutidas no topo do C, sobre `scanf`/`printf` |
+| `ler(ref x)`, `escrever(e)` | funções embutidas no topo do C, uma por tipo (`ler_int`, `escrever_float`...), sobre `scanf`/`printf` |
 
 ## Estrutura
 
