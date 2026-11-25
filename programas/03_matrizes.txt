@@ -1,0 +1,61 @@
+// Problema 3: Lê duas matrizes numéricas A (la x ca) e B (lb x cb) e,
+// quando possível, imprime a soma (A + B) e o produto (A * B).
+// Caso alguma operação não seja possível, imprime mensagem de impossibilidade.
+
+const int MAX := 20;
+
+proc main() {
+    int la := 0;
+    int ca := 0;
+    ler(ref la);
+    ler(ref ca);
+
+    int[MAX][MAX] a := [0; MAX, MAX];
+    for (int i := 0 to la - 1) {
+        for (int j := 0 to ca - 1) {
+            ler(ref a[i][j]);
+        }
+    }
+
+    int lb := 0;
+    int cb := 0;
+    ler(ref lb);
+    ler(ref cb);
+
+    int[MAX][MAX] b := [0; MAX, MAX];
+    for (int i := 0 to lb - 1) {
+        for (int j := 0 to cb - 1) {
+            ler(ref b[i][j]);
+        }
+    }
+
+    // Soma de matrizes: exige mesmas dimensões (la = lb e ca = cb)
+    if (la = lb && ca = cb) {
+        int[MAX][MAX] soma := [0; MAX, MAX];
+        for (int i := 0 to la - 1) {
+            for (int j := 0 to ca - 1) {
+                soma[i][j] := a[i][j] + b[i][j];
+                escrever(soma[i][j]);
+            }
+        }
+    } else {
+        escrever("Impossivel somar as matrizes: dimensoes incompativeis");
+    }
+
+    // Produto de matrizes: exige colunas de A = linhas de B (ca = lb)
+    if (ca = lb) {
+        int[MAX][MAX] prod := [0; MAX, MAX];
+        for (int i := 0 to la - 1) {
+            for (int j := 0 to cb - 1) {
+                int acum := 0;
+                for (int k := 0 to ca - 1) {
+                    acum := acum + a[i][k] * b[k][j];
+                }
+                prod[i][j] := acum;
+                escrever(prod[i][j]);
+            }
+        }
+    } else {
+        escrever("Impossivel multiplicar as matrizes: dimensoes incompativeis");
+    }
+}

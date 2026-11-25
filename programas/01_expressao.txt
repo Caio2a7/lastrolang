@@ -1,0 +1,12 @@
+// Problema 1: Avalia x^2 - y + c, onde x e y são números decimais (float)
+// e c é um número inteiro (int), previamente armazenados no código-fonte.
+// Exemplo: x = 2.5, y = 1.25, c = 3 -> (2.5 * 2.5) - 1.25 + 3 = 8.0
+
+proc main() {
+    float x := 2.5;
+    float y := 1.25;
+    int c := 3;
+
+    float resultado := x * x - y + c;
+    escrever(resultado);
+}
