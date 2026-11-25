@@ -1,0 +1,28 @@
+// Problema 5: Calcula recursivamente o MDC entre dois naturais estritamente
+// positivos n e m (por valor), retornando o resultado em r (por referência).
+
+proc mdc(int n, int m, ref int r) {
+    int resto_m_por_n := m - (m / n) * n;
+    int resto_n_por_m := n - (n / m) * m;
+
+    if (resto_m_por_n = 0) {
+        r := n;
+    } else if (resto_n_por_m = 0) {
+        r := m;
+    } else if (m > n) {
+        mdc(n, resto_m_por_n, ref r);
+    } else {
+        mdc(m, n, ref r);
+    }
+}
+
+proc main() {
+    int n := 0;
+    int m := 0;
+    ler(ref n);
+    ler(ref m);
+
+    int resultado := 0;
+    mdc(n, m, ref resultado);
+    escrever(resultado);
+}
