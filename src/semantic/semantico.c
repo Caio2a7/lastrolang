@@ -203,9 +203,9 @@ static void verifica_builtin(const Subprog *p, const Arg *args, int n_args, int 
         if (args->is_ref) {
             erro_semantico(args->linha, "argumento de 'escrever' não aceita 'ref'");
         }
-        if (args->tipo->kind != K_ERRO && !eh_escalar(args->tipo)) {
+        if (args->tipo->kind != K_ERRO && args->tipo->kind != K_TEXTO && !eh_escalar(args->tipo)) {
             char *st = type_str(args->tipo);
-            erro_semantico(args->linha, "'escrever' espera tipo escalar, mas recebeu '%s'", st);
+            erro_semantico(args->linha, "'escrever' espera tipo escalar ou texto, mas recebeu '%s'", st);
             free(st);
         }
     }
@@ -213,9 +213,14 @@ static void verifica_builtin(const Subprog *p, const Arg *args, int n_args, int 
 
 /* Nome C do embutido: C não tem sobrecarga, então cada tipo tem a sua função no prólogo. */
 static const char *nome_c_builtin(const char *nome, const Arg *args) {
-    int eh_float = args && args->tipo->kind == K_FLOAT;
-    if (strcmp(nome, "ler") == 0) return eh_float ? "ler_float" : "ler_int";
-    return eh_float ? "escrever_float" : "escrever_int";
+    Kind k = args ? args->tipo->kind : K_INT;
+    if (strcmp(nome, "ler") == 0) return k == K_FLOAT ? "ler_float" : "ler_int";  /* bool é int no C */
+    switch (k) {
+    case K_FLOAT: return "escrever_float";
+    case K_BOOL:  return "escrever_bool";
+    case K_TEXTO: return "escrever_texto";
+    default:      return "escrever_int";
+    }
 }
 
 Atr verifica_chamada(const char *nome, Arg *args, int linha) {

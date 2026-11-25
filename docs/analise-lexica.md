@@ -21,6 +21,8 @@ A especificação parte de três definições auxiliares: `digito = [0-9]`, `let
 | Tipo de retorno | `->` | `ARROW` |
 | Delimitador | `(` `)` `[` `]` `{` `}` | `LPAREN` `RPAREN` `LBRACKET` `RBRACKET` `LBRACE` `RBRACE` |
 | Separador | `,` `;` `.` | `COMMA` `SEMI` `DOT` |
+| Literal de texto | `\"[^\"\\\n]*\"` | `LITERAL_TEXTO` |
+| Texto sem fechar | `\"[^\"\\\n]*` | `ERRO` |
 | Literal real | `{digito}+"."{digito}+` | `LITERAL_FLOAT` |
 | Literal inteiro | `{digito}+` | `LITERAL_INT` |
 | Identificador | `{ident}` | `ID` |
@@ -29,6 +31,8 @@ A especificação parte de três definições auxiliares: `digito = [0-9]`, `let
 A linguagem tem 20 palavras reservadas, todas em minúsculas. Como ela diferencia maiúsculas de minúsculas, `If` e `WHILE` são identificadores comuns. `ler` e `escrever` também são identificadores: chegam ao parser como `ID` e entram na tabela de símbolos como subprogramas embutidos, de modo que a análise semântica confere uma chamada a eles do mesmo jeito que confere qualquer outra.
 
 Todo identificador começa com uma letra ASCII e continua com letras, dígitos ou sublinhado. Deixamos as letras acentuadas de fora porque o código de sistemas financeiros conversa com bibliotecas C e com sistemas legados (Problema 1), e um nome como `preço` não teria equivalente direto no C gerado. O literal inteiro é uma sequência de dígitos, sem sinal. Em `-5`, o `-` é o operador unário da gramática. O literal real exige dígitos dos dois lados do ponto (`2.5`; `2.` e `.5` não são aceitos). Em `2.5`, as regras de inteiro e de real casam ao mesmo tempo, e o casamento mais longo escolhe `LITERAL_FLOAT`. Valores monetários continuam sendo guardados como inteiros (em centavos ou pontos-base), como decidido no Problema 1. O `float` existe para os cálculos não monetários e para a coerção de `int` para `float` exigida na avaliação.
+
+O literal de texto fica entre aspas, na mesma linha e sem `\`, e vai para o C exatamente como foi escrito. A linguagem não tem tipo `string`: o texto só é aceito como argumento de `escrever`, para as mensagens exigidas nos problemas de avaliação. Quando as aspas não fecham na linha, ou quando aparece uma `\`, só a regra de texto sem fechar casa, e o léxico reporta `texto sem aspas de fechamento`.
 
 O léxico já reconhece `SWITCH`, `CASE`, `DEFAULT` e `DOT`, mas a gramática ainda não usa esses tokens em nenhuma produção. Eles ficam reservados para o comando `switch` e para o acesso a campo de registro, e o yacc os aponta como terminais não usados. Quando um deles aparece num programa, o léxico o aceita e o parser acusa erro de sintaxe.
 

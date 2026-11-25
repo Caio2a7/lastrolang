@@ -10,6 +10,7 @@ TypeDesc type_float = { .kind = K_FLOAT, .name = "float" };
 TypeDesc type_bool  = { .kind = K_BOOL,  .name = "bool" };
 TypeDesc type_void  = { .kind = K_VOID,  .name = "void" };
 TypeDesc type_erro  = { .kind = K_ERRO,  .name = "erro" };
+TypeDesc type_texto = { .kind = K_TEXTO, .name = "texto" };
 
 static HashMap types; // Tabela de tipos
 

@@ -26,7 +26,7 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
 %type <type> tipo tipo_base tipo_prim
 %type <num> tamanho
 
-%token <str> ID LITERAL_INT LITERAL_FLOAT
+%token <str> ID LITERAL_INT LITERAL_FLOAT LITERAL_TEXTO
 /* nome que está na tabela de tipos; o léxico decide entre ID e TYPE_ID */
 %token <str> TYPE_ID
 
@@ -273,6 +273,8 @@ args
 
 arg
     : expr     { $$ = arg_novo($1.cod, $1.tipo, 0, $1.linha); }
+    /* texto não é expressão: só aparece como argumento; o semântico só o aceita em escrever */
+    | LITERAL_TEXTO { $$ = arg_novo($1, &type_texto, 0, yylineno); }
     /* ref = passagem por referência: ponteiro no C; array já é ponteiro */
     | REF alvo {
             if ($2.eh_const)

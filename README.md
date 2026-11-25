@@ -93,6 +93,7 @@ O C gerado não usa `while`, `for` nem `else`: todo controle de fluxo vira `if (
 | `[e; n]` | `e` calculado uma vez e laço de preenchimento com `goto` |
 | `for (int i := a to b)` | bloco com `i <= b`, `b` calculado uma vez |
 | `ler(ref x)`, `escrever(e)` | funções embutidas no topo do C, uma por tipo (`ler_int`, `escrever_float`...), sobre `scanf`/`printf` |
+| `escrever(b)` com `bool` / `escrever("texto")` | imprime `true`/`false` / o texto; texto só existe como argumento de `escrever` |
 
 ## Estrutura
 

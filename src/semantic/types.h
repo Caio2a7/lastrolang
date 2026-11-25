@@ -6,7 +6,8 @@
  * @brief Descritores de tipo e tabela de tipos (chave = nome do tipo).
  */
 
-typedef enum { K_INT, K_FLOAT, K_BOOL, K_VOID, K_ERRO, K_ARRAY, K_RECORD } Kind;
+/* K_TEXTO: literal de texto, só aceito como argumento de escrever (não há tipo string). */
+typedef enum { K_INT, K_FLOAT, K_BOOL, K_VOID, K_ERRO, K_ARRAY, K_RECORD, K_TEXTO } Kind;
 
 /* Declaração antecipada: Field aponta para TypeDesc e TypeDesc aponta para Field.
  * Como os dois só guardam ponteiros, o compilador não precisa do tamanho do
@@ -29,6 +30,8 @@ struct TypeDesc {
 
 /* Primitivos: uma única instância de cada, então podem ser comparados por ponteiro. */
 extern TypeDesc type_int, type_float, type_bool, type_void, type_erro;
+/* Fora da tabela de tipos: nenhuma declaração pode ter tipo texto. */
+extern TypeDesc type_texto;
 
 /**
  * @brief Registra os tipos primitivos da linguagem (int e bool) na tabela.

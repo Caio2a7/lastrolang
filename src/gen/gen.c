@@ -18,6 +18,8 @@ const char *gen_prologo =
     "static inline void ler_float(double *x) { if (scanf(\"%lf\", x) != 1) exit(1); }\n"
     "static inline void escrever_int(int x) { printf(\"%d\\n\", x); }\n"
     "static inline void escrever_float(double x) { printf(\"%g\\n\", x); }\n"
+    "static inline void escrever_bool(int x) { puts(x ? \"true\" : \"false\"); }\n"
+    "static inline void escrever_texto(const char *s) { puts(s); }\n"
     "\n";
 
 /* Número novo e único no programa: nomeia rótulos (_L3) e temporários (_t4).
