@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int main(void) {
@@ -99,6 +100,26 @@ int main(void) {
     assert(erros_semanticos() == e10 + 3);  /* sobra int[3] para um int */
     assert(verifica_preenche("m", mat, type_add_dim(type_array(&type_void, 2), 2), atr("0", &type_int, 15), 15) == 2);
     assert(erros_semanticos() == e10 + 4);  /* 2ª dimensão: 3 != 2 */
+
+    /* Ponteiros: ^No compara com = e != (e com nulo), recebe nulo, e p.campo desreferencia sozinho */
+    TypeDesc *no = type_insert("No_ptr", (TypeDesc){ .kind = K_RECORD });
+    no->fields = &(Field){ .name = "chave", .type = &type_int };
+    TypeDesc *pno = type_ptr(no);
+    assert(type_equal(pno, type_ptr(no)) && !type_equal(pno, type_ptr(&type_int)));
+    char *spno = type_str(pno);
+    assert(strcmp(spno, "^No_ptr") == 0);
+    free(spno);
+    assert(compativel(pno, &type_nulo, &res) && res == pno);
+    assert(compativel(&type_nulo, pno, &res) && res == pno);
+    assert(!compativel(pno, type_ptr(&type_int), &res));
+    assert(tipo_resultado(OP_IGUALDADE, pno, &type_nulo) == &type_bool);
+    assert(tipo_resultado(OP_RELACIONAL, pno, &type_nulo) == &type_erro);
+    assert(tipo_resultado(OP_ARITMETICO, pno, pno) == &type_erro);
+    assert(tipo_atribuivel(pno, &type_nulo) && !tipo_atribuivel(&type_int, &type_nulo));
+    int ep = erros_semanticos();
+    Atr chave = verifica_campo(atr("p", pno, 16), "chave", 16);
+    assert(chave.tipo == &type_int && strcmp(chave.cod, "((*p)._campo_chave)") == 0);
+    assert(erros_semanticos() == ep);
 
     /* Chamadas e retorno (#13): aridade, tipos (int -> float), ref, proc em expr, return */
     type_init();

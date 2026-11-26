@@ -108,6 +108,8 @@ Subprog *use_sub(const char *name, int line);
 /* Acrescenta o parâmetro ao fim da lista do subprograma e conta n_params. */
 void append_param(Subprog *sub, Symbol *param);
 
-TypeDesc *declare_type(const char *name, Field *fields, int line);
+/* type Nome { campos };  abre antes dos campos (permite ^Nome dentro), fecha depois. */
+TypeDesc *declare_type_abre(const char *name, int line);
+TypeDesc *declare_type_fecha(TypeDesc *t, Field *fields, int line);
 
 #endif

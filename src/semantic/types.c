@@ -11,6 +11,7 @@ TypeDesc type_bool  = { .kind = K_BOOL,  .name = "bool" };
 TypeDesc type_void  = { .kind = K_VOID,  .name = "void" };
 TypeDesc type_erro  = { .kind = K_ERRO,  .name = "erro" };
 TypeDesc type_texto = { .kind = K_TEXTO, .name = "texto" };
+TypeDesc type_nulo  = { .kind = K_NULO,  .name = "nulo" };
 
 static HashMap types; // Tabela de tipos
 
@@ -47,6 +48,10 @@ TypeDesc *type_add_dim(TypeDesc *t, int size) {
     return type_array(type_add_dim(t->elem, size), t->size);
 }
 
+TypeDesc *type_ptr(TypeDesc *elem) {
+    return hm_copy(&(TypeDesc){ .kind = K_PTR, .elem = elem }, sizeof(TypeDesc));
+}
+
 int type_equal(const TypeDesc *a, const TypeDesc *b) {
     if (a == b) {
         return 1;
@@ -56,10 +61,23 @@ int type_equal(const TypeDesc *a, const TypeDesc *b) {
         return a->size == b->size && type_equal(a->elem, b->elem);
     }
 
+    if (a->kind == K_PTR && b->kind == K_PTR) {
+        return type_equal(a->elem, b->elem);
+    }
+
     return 0;
 }
 
 char *type_str(const TypeDesc *t) {
+    if (t->kind == K_PTR) {  /* ponteiro não tem nome: monta "^No" */
+        char *elem = type_str(t->elem);
+        size_t len = strlen(elem) + 2;  /* '^' + '\0' */
+        char *str = malloc(len);
+        snprintf(str, len, "^%s", elem);
+        free(elem);
+        return str;
+    }
+
     if (t->kind != K_ARRAY) {
         return strdup(t->name);
     }

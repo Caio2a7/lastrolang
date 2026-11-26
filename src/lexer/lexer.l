@@ -40,6 +40,9 @@ ident    {letra}({letra}|{digito}|_)*
 "true"        { return TRUE; }
 "false"       { return FALSE; }
 "type"        { return TYPE; }
+"nulo"        { return NULO; }
+"novo"        { return NOVO; }
+"^"           { return CARET; }
 
 ":="          { return ASSIGN; }
 "="           { return EQ; }

@@ -57,6 +57,7 @@ const char *c_tipo(const TypeDesc *t) {
     case K_FLOAT:  return "double";
     case K_VOID:   return "void";
     case K_RECORD: return cod_fmt("_tipo_%s", t->name);
+    case K_PTR:    return cod_fmt("%s *", c_tipo(t->elem));
     default:       return "int";  /* int, bool e erro */
     }
 }
@@ -282,7 +283,9 @@ char *gen_decl_type(const TypeDesc *t) {
         free(nome);
     }
     char *corpo = indenta(campos);
-    char *res = cod_fmt("typedef struct {\n%s} %s;\n", corpo, c_tipo(t));
+    /* struct com nome, declarado antes do corpo: um campo pode ser ponteiro para o próprio tipo */
+    const char *nome = c_tipo(t);
+    char *res = cod_fmt("typedef struct %s %s;\nstruct %s {\n%s};\n", nome, nome, nome, corpo);
     free(corpo);
     free(campos);
     return res;

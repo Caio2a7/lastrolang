@@ -6,8 +6,9 @@
  * @brief Descritores de tipo e tabela de tipos (chave = nome do tipo).
  */
 
-/* K_TEXTO: literal de texto, só aceito como argumento de escrever (não há tipo string). */
-typedef enum { K_INT, K_FLOAT, K_BOOL, K_VOID, K_ERRO, K_ARRAY, K_RECORD, K_TEXTO } Kind;
+/* K_TEXTO: literal de texto, só aceito como argumento de escrever (não há tipo string).
+ * K_PTR: ^T, aponta para um T (elem). K_NULO: tipo do literal nulo, cabe em qualquer ^T. */
+typedef enum { K_INT, K_FLOAT, K_BOOL, K_VOID, K_ERRO, K_ARRAY, K_RECORD, K_TEXTO, K_NULO, K_PTR } Kind;
 
 /* Declaração antecipada: Field aponta para TypeDesc e TypeDesc aponta para Field.
  * Como os dois só guardam ponteiros, o compilador não precisa do tamanho do
@@ -23,15 +24,15 @@ typedef struct Field {
 struct TypeDesc {
     Kind kind;
     char *name;       // "int", "Conta"; NULL em array
-    TypeDesc *elem;   // Array: tipo do elemento
+    TypeDesc *elem;   // Array: tipo do elemento; ponteiro: tipo apontado
     int size;         // Array: número de elementos
     Field *fields;    // Registro: lista de campos
 };
 
 /* Primitivos: uma única instância de cada, então podem ser comparados por ponteiro. */
 extern TypeDesc type_int, type_float, type_bool, type_void, type_erro;
-/* Fora da tabela de tipos: nenhuma declaração pode ter tipo texto. */
-extern TypeDesc type_texto;
+/* Fora da tabela de tipos: nenhuma declaração pode ter tipo texto nem nulo. */
+extern TypeDesc type_texto, type_nulo;
 
 /**
  * @brief Registra os tipos primitivos da linguagem (int e bool) na tabela.
@@ -62,15 +63,21 @@ TypeDesc *type_array(TypeDesc *elem, int size);
 TypeDesc *type_add_dim(TypeDesc *t, int size);
 
 /**
+ * @brief Cria o tipo ^elem; como array, é anônimo e não entra na tabela.
+ */
+TypeDesc *type_ptr(TypeDesc *elem);
+
+/**
  * @brief Compara dois tipos: primitivos e registros pela identidade do descritor,
- *        arrays pela estrutura (mesmo tamanho e mesmo tipo de elemento).
+ *        arrays pela estrutura (mesmo tamanho e mesmo tipo de elemento) e
+ *        ponteiros pelo tipo apontado.
  * @return 1 se forem iguais, 0 caso contrário. Coerções e o tipo erro ficam
  *         a cargo da análise semântica.
  */
 int type_equal(const TypeDesc *a, const TypeDesc *b);
 
 /**
- * @brief Texto do tipo, como "int", "int[10]", "int[2][3]" ou "Conta".
+ * @brief Texto do tipo, como "int", "int[10]", "int[2][3]", "Conta" ou "^Conta".
  * @return String nova (deve ser liberada pelo chamador).
  */
 char *type_str(const TypeDesc *t);
