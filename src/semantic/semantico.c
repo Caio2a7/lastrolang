@@ -131,24 +131,53 @@ int verifica_atribuicao(const TypeDesc *destino, const TypeDesc *origem, int lin
     return 0;
 }
 
-Atr verifica_indexacao(const char *nome, Symbol *s, Atr idx, int linha) {
-    char *cod = cod_fmt("%s[%s]", nome, idx.cod);
+Atr verifica_indexacao(Atr base, Atr idx, int linha) {
+    char *cod = cod_fmt("%s[%s]", base.cod, idx.cod);
     if (idx.tipo->kind != K_ERRO && idx.tipo->kind != K_INT) {
         char *si = type_str(idx.tipo);
-        erro_semantico(idx.linha, "índice de '%s' tem de ser 'int', mas recebeu '%s'", nome, si);
+        erro_semantico(idx.linha, "índice de '%s' tem de ser 'int', mas recebeu '%s'", base.cod, si);
         free(si);
     }
-    TypeDesc *t = s ? s->type : &type_erro;
-    if (t->kind == K_ERRO) return atr(cod, &type_erro, linha);
-    if (t->kind != K_ARRAY) {
-        char *st = type_str(t);
-        erro_semantico(linha, "'%s' não é array (tipo '%s')", nome, st);
+    if (base.tipo->kind == K_ERRO) return atr(cod, &type_erro, linha);
+    if (base.tipo->kind != K_ARRAY) {
+        char *st = type_str(base.tipo);
+        erro_semantico(linha, "'%s' não é array (tipo '%s')", base.cod, st);
         free(st);
         return atr(cod, &type_erro, linha);
     }
-    Atr res = atr(cod, t->elem, linha);
-    res.eh_const = (s->category == C_CONST);
+    Atr res = atr(cod, base.tipo->elem, linha);
+    res.eh_const = base.eh_const;
     return res;
+}
+
+static int n_dims(const TypeDesc *t) {
+    int n = 0;
+    for (; t->kind == K_ARRAY; t = t->elem) n++;
+    return n;
+}
+
+int verifica_preenche(const char *nome, const TypeDesc *t, const TypeDesc *forma, Atr e, int linha) {
+    if (t->kind != K_ARRAY) {
+        erro_semantico(linha, "'%s' não é array; [e; n] só inicializa array", nome);
+        return 0;
+    }
+    int k = n_dims(forma), dims = n_dims(t);
+    if (k > dims) {
+        erro_semantico(linha, "'%s' tem %d dimensão(ões), mas o inicializador tem %d", nome, dims, k);
+        return 0;
+    }
+    for (int d = 1; d <= k; d++, t = t->elem, forma = forma->elem) {
+        /* tamanho 0 = tamanho inválido, erro já reportado */
+        if (t->size > 0 && forma->size > 0 && t->size != forma->size) {
+            if (dims == 1)
+                erro_semantico(linha, "'%s' tem %d elementos, mas o inicializador tem %d", nome, t->size, forma->size);
+            else
+                erro_semantico(linha, "dimensão %d de '%s' tem %d elementos, mas o inicializador tem %d",
+                               d, nome, t->size, forma->size);
+        }
+    }
+    verifica_atribuicao(t, e.tipo, e.linha, "inicializador de array");
+    return k;
 }
 
 Arg *arg_novo(char *cod, TypeDesc *tipo, int is_ref, int linha) {

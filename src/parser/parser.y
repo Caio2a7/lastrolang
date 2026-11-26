@@ -23,7 +23,7 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
     Arg *arg;  /* lista de argumentos de uma chamada */
 }
 
-%type <type> tipo tipo_base tipo_prim
+%type <type> tipo tipo_base tipo_prim tamanhos
 %type <num> tamanho
 
 %token <str> ID LITERAL_INT LITERAL_FLOAT LITERAL_TEXTO
@@ -122,8 +122,8 @@ param
     ;
 
 tipo
-    : tipo_base                             { $$ = $1; }
-    | tipo_base LBRACKET tamanho RBRACKET   { $$ = type_array($1, $3); }
+    : tipo_base                         { $$ = $1; }
+    | tipo LBRACKET tamanho RBRACKET    { $$ = type_add_dim($1, $3); }  /* matriz: int[N][M] */
     ;
 
 tipo_base
@@ -153,6 +153,12 @@ tamanho
             $$ = atoi($1);
             if ($$ <= 0) erro_semantico(yylineno, "tamanho do array tem de ser > 0");
         }
+    ;
+
+/* tamanhos do inicializador [e; n, m]: guardados como array de void, só a forma importa */
+tamanhos
+    : tamanho                   { $$ = type_array(&type_void, $1); }
+    | tamanhos COMMA tamanho    { $$ = type_add_dim($1, $3); }
     ;
 
 /* Corpo de subprograma e de for: o escopo já foi aberto antes. */
@@ -227,14 +233,10 @@ decl_var
             declare_var($2, C_VAR, $1, 0, yylineno);
             $$ = gen_decl($1, $2, coage($4, $1), sombra);
         }
-    | tipo ID ASSIGN LBRACKET expr SEMI tamanho RBRACKET SEMI {
+    | tipo ID ASSIGN LBRACKET expr SEMI tamanhos RBRACKET SEMI {
             declare_var($2, C_VAR, $1, 0, yylineno);
-            if ($1->kind == K_ARRAY) {
-                if ($1->size > 0 && $7 > 0 && $7 != $1->size)
-                    erro_semantico(yylineno, "'%s' tem %d elementos, mas o inicializador tem %d", $2, $1->size, $7);
-                verifica_atribuicao($1->elem, $5.tipo, $5.linha, "inicializador de array");
-            }
-            $$ = gen_decl_preenche($1, $2, $1->kind == K_ARRAY ? coage($5, $1->elem) : $5, yylineno);
+            int k = verifica_preenche($2, $1, $7, $5, yylineno);
+            $$ = k ? gen_decl_preenche($1, $2, $5, k) : "";
         }
     ;
 
@@ -257,10 +259,7 @@ alvo
             $$ = atr(ptr ? cod_fmt("(*%s)", $1) : $1, s ? s->type : &type_erro, yylineno);
             $$.eh_const = s && s->category == C_CONST;
         }
-    | ID LBRACKET expr RBRACKET {
-            Symbol *s = use_var($1, yylineno);
-            $$ = verifica_indexacao($1, s, $3, yylineno);
-        }
+    | alvo LBRACKET expr RBRACKET   { $$ = verifica_indexacao($1, $3, yylineno); }  /* a[i][j] */
     ;
 
 /* chamada consulta só a tabela de subprogramas: x() com x variável é erro */

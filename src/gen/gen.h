@@ -26,7 +26,7 @@ void laco_fecha(void);
 /* Tipo C de um tipo Lastro: bool vira int. */
 const char *c_tipo(const TypeDesc *t);
 
-/* Declaração C sem ';': "int x" ou "int v[10]". */
+/* Declaração C sem ';': "int x", "int v[10]" ou "int m[2][3]". */
 char *c_decl(const TypeDesc *t, const char *nome);
 
 /* "{\n" + cmds indentados + "}\n". */
@@ -36,8 +36,8 @@ char *gen_bloco(const char *cmds);
  * e é calculado antes num temporário, porque em C o x novo já valeria dentro de e. */
 char *gen_decl(const TypeDesc *t, const char *nome, Atr e, int sombra);
 
-/* int v[n] := [e; n]: laço de preenchimento com goto. */
-char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int linha);
+/* int[n][m] v := [e; n, m]: laços aninhados de preenchimento com goto, um por tamanho (k). */
+char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int k);
 
 char *gen_atrib(Atr alvo, Atr e);
 
