@@ -2,7 +2,7 @@
 
 O analisador sintático de Lastro é gerado pelo bison a partir de `src/parser/parser.y` e é um parser LALR(1). Em cada estado do autômato, o parser consulta o próximo token (lookahead) e escolhe uma ação: empilhar o token (shift) ou trocar o lado direito de uma produção, já no topo da pilha, pelo não terminal correspondente (reduce). Um conflito shift-reduce aparece quando, para o mesmo estado e o mesmo token, as duas ações são possíveis. Nesse caso o bison avisa e escolhe o shift, a menos que declarações como `%left` e `%right` digam outra coisa.
 
-A gramática de Lastro tem 175 estados e nenhum conflito. Os conflitos clássicos não foram resolvidos com `%left`/`%right`, foram eliminados por construção: a precedência e a associatividade estão nos níveis da gramática (`expr`, `conj`, `rel`, `soma`, `termo`, `fator`), e as chaves obrigatórias em `if`, `while` e `for` acabam com o dangling else. Para um sistema financeiro, a prioridade de confiabilidade (Problema 1) pede que a ordem de avaliação de `saldo - taxa - juros` esteja escrita na própria gramática e não dependa de uma regra de desempate do gerador. Abaixo mostramos, para cada ponto onde uma gramática ambígua teria conflito, o estado do `build/y.output` em que a decisão é tomada, o trace da derivação e o resultado do binário.
+A gramática de Lastro tem 199 estados e nenhum conflito. Os conflitos clássicos não foram resolvidos com `%left`/`%right`, foram eliminados por construção: a precedência e a associatividade estão nos níveis da gramática (`expr`, `conj`, `rel`, `soma`, `termo`, `fator`), e as chaves obrigatórias em `if`, `while` e `for` acabam com o dangling else. Para um sistema financeiro, a prioridade de confiabilidade (Problema 1) pede que a ordem de avaliação de `saldo - taxa - juros` esteja escrita na própria gramática e não dependa de uma regra de desempate do gerador. Abaixo mostramos, para cada ponto onde uma gramática ambígua teria conflito, o estado do `build/y.output` em que a decisão é tomada, o trace da derivação e o resultado do binário.
 
 ```
 make conflitos         # 0 conflitos na gramática real e 1 S/R na variante sem chaves
@@ -14,28 +14,28 @@ Os números de estado abaixo valem para a gramática atual. Se a gramática muda
 
 ## Associatividade: `a - b - c`
 
-Numa gramática ambígua como `expr : expr '-' expr`, depois de `10 - 3` com outro `-` à frente o parser poderia reduzir (`(10 - 3) - 2`) ou empilhar (`10 - (3 - 2)`). Em Lastro o operando da direita de `soma MINUS termo` é um `termo`, que não contém `-` binário, então o único caminho é reduzir primeiro. O estado 138 mostra isso:
+Numa gramática ambígua como `expr : expr '-' expr`, depois de `10 - 3` com outro `-` à frente o parser poderia reduzir (`(10 - 3) - 2`) ou empilhar (`10 - (3 - 2)`). Em Lastro o operando da direita de `soma MINUS termo` é um `termo`, que não contém `-` binário, então o único caminho é reduzir primeiro. O estado 154 mostra isso:
 
 ```
-State 138
-   79 soma: soma MINUS termo .
-   81 termo: termo . STAR fator
-   82      | termo . SLASH fator
-    STAR   shift, and go to state 116
-    SLASH  shift, and go to state 117
-    $default  reduce using rule 79 (soma)
+State 154
+   91 soma: soma MINUS termo .
+   93 termo: termo . STAR fator
+   94      | termo . SLASH fator
+    STAR   shift, and go to state 129
+    SLASH  shift, and go to state 130
+    $default  reduce using rule 91 (soma)
 ```
 
-Com `MINUS` à frente não há shift possível, e o parser reduz pela regra 79. O trace de `10 - 3 - 2` confirma: o segundo `MINUS` só é empilhado depois da redução.
+Com `MINUS` à frente não há shift possível, e o parser reduz pela regra 91. O trace de `10 - 3 - 2` confirma: o segundo `MINUS` só é empilhado depois da redução.
 
 ```
 Next token is token MINUS ()
-Reducing stack by rule 79 (line 346):
+Reducing stack by rule 91 (line 397):
    $1 = nterm soma ()
    $2 = token MINUS ()
    $3 = nterm termo ()
 -> $$ = nterm soma ()
-Entering state 75
+Entering state 84
 Next token is token MINUS ()
 Shifting token MINUS ()
 ```
@@ -44,52 +44,52 @@ O C gerado põe parênteses em toda operação e deixa a árvore visível: `escr
 
 ## Precedência: `a + b * c`
 
-Depois de `2 + 3` com `*` à frente, uma gramática ambígua teria de escolher entre reduzir (`(2 + 3) * 4`) e empilhar (`2 + (3 * 4)`). Em Lastro, `3` já foi reduzido a `termo`, e o estado 137 tem as duas possibilidades, mas para tokens diferentes:
+Depois de `2 + 3` com `*` à frente, uma gramática ambígua teria de escolher entre reduzir (`(2 + 3) * 4`) e empilhar (`2 + (3 * 4)`). Em Lastro, `3` já foi reduzido a `termo`, e o estado 153 tem as duas possibilidades, mas para tokens diferentes:
 
 ```
-State 137
-   78 soma: soma PLUS termo .
-   81 termo: termo . STAR fator
-   82      | termo . SLASH fator
-    STAR   shift, and go to state 116
-    SLASH  shift, and go to state 117
-    $default  reduce using rule 78 (soma)
+State 153
+   90 soma: soma PLUS termo .
+   93 termo: termo . STAR fator
+   94      | termo . SLASH fator
+    STAR   shift, and go to state 129
+    SLASH  shift, and go to state 130
+    $default  reduce using rule 90 (soma)
 ```
 
-Com `STAR` o parser empilha, porque o termo ainda pode crescer. Com qualquer outro token ele reduz a soma. O trace de `2 + 3 * 4` mostra o `*` empilhado, a redução de `termo STAR fator` pela regra 81 e só depois a da soma:
+Com `STAR` o parser empilha, porque o termo ainda pode crescer. Com qualquer outro token ele reduz a soma. O trace de `2 + 3 * 4` mostra o `*` empilhado, a redução de `termo STAR fator` pela regra 93 e só depois a da soma:
 
 ```
 Next token is token STAR ()
 Shifting token STAR ()
 ...
-Reducing stack by rule 81 (line 351):
+Reducing stack by rule 93 (line 402):
    $1 = nterm termo ()
    $2 = token STAR ()
    $3 = nterm fator ()
 -> $$ = nterm termo ()
-Entering state 137
+Entering state 153
 Next token is token RPAREN ()
-Reducing stack by rule 78 (line 345):
+Reducing stack by rule 90 (line 396):
 ```
 
 O C gerado é `escrever_int((2 + (3 * 4)));`, e o binário imprime `14`. O mesmo raciocínio vale entre todos os níveis, e `tests/conflitos/valido/02_precedencia.txt` cobre cada um deles: `-2 + 3` dá `1` porque o menos unário está em `fator`; `1 + 2 < 2 * 2` vira `((1 + 2) < (2 * 2))`; `true || false && false` dá `true` porque `&&` liga mais forte que `||`; e `!false && false` dá `false` porque `!` se aplica só ao `fator`. O caso inválido `tests/conflitos/invalido/16_precedencia_semantica.txt` mostra a árvore por outro lado: em `1 + 2 < 4 && 5`, o semântico reclama de `&&` entre `bool` e `int`, o que só acontece se o parser montou `((1 + 2) < 4) && 5`.
 
-Os relacionais ficam num nível sem recursão, `rel : soma op_rel soma`. No estado 75, depois de uma `soma`, o parser empilha o operador relacional; depois da segunda `soma`, no estado 139, só cabem `+` e `-`, e qualquer outro relacional é erro de sintaxe. Assim `1 < 2 < 3`, `a = 1 = c` e `1 < 2 = true` são rejeitados (testes 01 a 03 de `invalido/`), e quem quer comparar o resultado de uma comparação escreve os parênteses, `(1 < 2) = true`. Em C, `1 < 2 < 3` é aceito e compara `(1 < 2)`, que vale 1, com 3, um resultado que quase nunca é o pretendido. Preferimos o erro de compilação.
+Os relacionais ficam num nível sem recursão, `rel : soma op_rel soma`. No estado 84, depois de uma `soma`, o parser empilha o operador relacional; depois da segunda `soma`, no estado 155, só cabem `+` e `-`, e qualquer outro relacional é erro de sintaxe. Assim `1 < 2 < 3`, `a = 1 = c` e `1 < 2 = true` são rejeitados (testes 01 a 03 de `invalido/`), e quem quer comparar o resultado de uma comparação escreve os parênteses, `(1 < 2) = true`. Em C, `1 < 2 < 3` é aceito e compara `(1 < 2)`, que vale 1, com 3, um resultado que quase nunca é o pretendido. Preferimos o erro de compilação.
 
 ## `if` aninhado com `else`
 
-O dangling else é o conflito clássico de `if (a) if (b) x; else y;`: depois de `if (b) x;` com `else` à frente, o parser pode reduzir o `if` de dentro sem `else` (o `else` fica com o `if` de fora) ou empilhar o `else` (ele fica com o `if` de dentro). Em Lastro o corpo de um `if` é sempre `bloco`, que termina em `}`, e o `else` só pode vir logo depois desse `}`. No estado 148 a escolha é determinada pelo token:
+O dangling else é o conflito clássico de `if (a) if (b) x; else y;`: depois de `if (b) x;` com `else` à frente, o parser pode reduzir o `if` de dentro sem `else` (o `else` fica com o `if` de fora) ou empilhar o `else` (ele fica com o `if` de dentro). Em Lastro o corpo de um `if` é sempre `bloco`, que termina em `}`, e o `else` só pode vir logo depois desse `}`. No estado 166 a escolha é determinada pelo token:
 
 ```
-State 148
-   59 if_stmt: IF LPAREN expr RPAREN bloco .
-   60        | IF LPAREN expr RPAREN bloco . ELSE if_stmt
-   61        | IF LPAREN expr RPAREN bloco . ELSE bloco
-    ELSE  shift, and go to state 154
-    $default  reduce using rule 59 (if_stmt)
+State 166
+   71 if_stmt: IF LPAREN expr RPAREN bloco .
+   72        | IF LPAREN expr RPAREN bloco . ELSE if_stmt
+   73        | IF LPAREN expr RPAREN bloco . ELSE bloco
+    ELSE  shift, and go to state 174
+    $default  reduce using rule 71 (if_stmt)
 ```
 
-Não há conflito porque o `if` de dentro está inteiro dentro das chaves do `if` de fora. Quando o `else` aparece, ele está depois do `}` de um único `if`, e é desse `if` que ele é. O programador escolhe o dono pela posição das chaves, e o programa `tests/conflitos/valido/03_if_aninhado.txt` testa os dois casos: com o `else` fora das chaves do `if` interno, ele pertence ao `if` de fora, e o binário não imprime nada quando a condição de fora é verdadeira e a de dentro é falsa; com o `else` dentro das chaves, ele pertence ao `if` interno, e o binário imprime `else interno`. O mesmo programa testa a cadeia `else if` de quatro ramos, que entra pela regra 60. Os casos inválidos 04 a 08 mostram que o `if` sem chaves, o `else` sem bloco, o `else` repetido, o `else` sem `if` e o `else` depois de outro comando são todos rejeitados na linha certa.
+Não há conflito porque o `if` de dentro está inteiro dentro das chaves do `if` de fora. Quando o `else` aparece, ele está depois do `}` de um único `if`, e é desse `if` que ele é. O programador escolhe o dono pela posição das chaves, e o programa `tests/conflitos/valido/03_if_aninhado.txt` testa os dois casos: com o `else` fora das chaves do `if` interno, ele pertence ao `if` de fora, e o binário não imprime nada quando a condição de fora é verdadeira e a de dentro é falsa; com o `else` dentro das chaves, ele pertence ao `if` interno, e o binário imprime `else interno`. O mesmo programa testa a cadeia `else if` de quatro ramos, que entra pela regra 72. Os casos inválidos 04 a 08 mostram que o `if` sem chaves, o `else` sem bloco, o `else` repetido, o `else` sem `if` e o `else` depois de outro comando são todos rejeitados na linha certa.
 
 ### Variante didática: `if` sem chaves
 
@@ -115,22 +115,32 @@ State 10
 
 A ação entre colchetes é a que o bison descartou. Ele resolveu o conflito com shift, então o `else` fica com o `if` mais próximo, a mesma regra de C e Java. O binário `build/dangling_else` imprime a árvore com chaves explícitas, e o `make test-conflitos` confere que `if (a) if (b) x; else y;` sai como `if(a){if(b){x}else{y}}` e que, com três níveis, cada `else` fica com o `if` aberto mais interno. A resolução está correta, mas é implícita: quem lê o código fonte precisa conhecer a regra para saber de quem é o `else`. Por isso Lastro exige as chaves.
 
-## `ID` seguido de `(` ou `[`
+## `ID` seguido de `(`, `[` ou `.`
 
-Um identificador pode começar uma variável (`x`), um elemento de array (`v[i]`) ou uma chamada (`f(i)`). Ao ler o `ID`, o parser ainda não sabe qual dos três é, e decide no estado 27 olhando o token seguinte:
+Um identificador pode começar uma variável (`x`), um elemento de array (`v[i]`), um campo de registro (`r.valor`) ou uma chamada (`f(i)`). Ao ler o `ID`, o parser ainda não sabe qual é, e decide no estado 34 olhando o token seguinte:
 
 ```
-State 27
-   50 alvo: ID .
-   51     | ID . LBRACKET expr RBRACKET
-   52 chamada: ID . LPAREN RPAREN
-   53        | ID . LPAREN args RPAREN
-    LPAREN    shift, and go to state 59
-    LBRACKET  shift, and go to state 60
-    $default  reduce using rule 50 (alvo)
+State 34
+   61 alvo: ID .
+   64 chamada: ID . LPAREN RPAREN
+   65        | ID . LPAREN args RPAREN
+    LPAREN  shift, and go to state 69
+    $default  reduce using rule 61 (alvo)
 ```
 
-`(` leva à chamada, `[` à indexação, e qualquer outro token reduz o `ID` a `alvo`. Como os três casos começam com tokens distintos depois do `ID`, um token de lookahead basta, e não há conflito. O programa `tests/conflitos/valido/04_id_lookahead.txt` combina os três em `v[dobro(1) - 2]`, `dobro(v[i])` e `dobro(dobro(i)) + v[i] * 2` e confere os valores. A chamada e a indexação só seguem um `ID`, então `f(1)[0]` e `v[0](1)` são erros de sintaxe (inválidos 09 e 10). Depois de `ref`, o estado 126 só tem o item de `alvo`, sem a ação para `(`. Em `g(ref f(1))` a ação padrão reduz `f` a `alvo`, o semântico acusa que `f` é um subprograma e não uma variável, e em seguida o `(` dá o erro de sintaxe (inválido 11). Passar por referência o resultado de uma chamada não teria sentido, porque não há variável do chamador para alterar.
+`(` leva à chamada, e qualquer outro token reduz o `ID` a `alvo`. A indexação e o acesso a campo são decididos depois dessa redução, porque `alvo` é recursivo à esquerda (`alvo LBRACKET expr RBRACKET` e `alvo DOT name`), o que permite encadear `caixa.itens[0].valor`. Dentro de uma expressão, o estado 79 empilha `[` ou `.` e reduz o `alvo` a `fator` com qualquer outro token:
+
+```
+State 79
+   62 alvo: alvo . LBRACKET expr RBRACKET
+   63     | alvo . DOT name
+   97 fator: alvo .
+    LBRACKET  shift, and go to state 93
+    DOT       shift, and go to state 94
+    $default  reduce using rule 97 (fator)
+```
+
+Nos dois estados cada token leva a uma única ação, então um token de lookahead basta, e não há conflito. O programa `tests/conflitos/valido/04_id_lookahead.txt` combina os casos em `v[dobro(1) - 2]`, `dobro(v[i])` e `dobro(dobro(i)) + v[i] * 2` e confere os valores. A chamada só segue um `ID`, e a indexação só segue um `alvo`, que nunca é uma chamada, então `f(1)[0]` e `v[0](1)` são erros de sintaxe (inválidos 09 e 10). Depois de `ref`, o estado 143 só tem o item `alvo: ID .`, sem a ação para `(`. Em `g(ref f(1))` a ação padrão reduz `f` a `alvo`, o semântico acusa que `f` é um subprograma e não uma variável, e em seguida o `(` dá o erro de sintaxe (inválido 11). Passar por referência o resultado de uma chamada não teria sentido, porque não há variável do chamador para alterar.
 
 ## Demais erros
 
