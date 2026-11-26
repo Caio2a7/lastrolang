@@ -23,6 +23,7 @@ ident    {letra}({letra}|{digito}|_)*
 "proc"        { return PROC; }
 "func"        { return FUNC; }
 "int"         { return INT; }
+"float"       { return FLOAT; }
 "bool"        { return BOOL; }
 "if"          { return IF; }
 "else"        { return ELSE; }
@@ -65,6 +66,12 @@ ident    {letra}({letra}|{digito}|_)*
 ";"           { return SEMI; }
 "."           { return DOT; }
 
+  /* Texto só entre aspas na mesma linha, sem '\': o C recebe o lexema como está.
+     Aspas sem fechar (ou com '\') casam só a segunda regra, que é mais curta. */
+\"[^\"\\\n]*\"         { yylval.str = strdup(yytext); return LITERAL_TEXTO; }
+\"[^\"\\\n]*           { yyerror("texto sem aspas de fechamento (ou com '\\')"); return ERRO; }
+  /* "2.5" casa as duas regras; o casamento mais longo escolhe LITERAL_FLOAT */
+{digito}+"."{digito}+  { yylval.str = strdup(yytext); return LITERAL_FLOAT; }
 {digito}+     { yylval.str = strdup(yytext); return LITERAL_INT; }
   /* Nome que já é tipo vira TYPE_ID; sem isso, "Conta[10] c" e "v[i] := ..."
      ficariam ambíguos para o parser. As palavras reservadas casam antes desta regra. */

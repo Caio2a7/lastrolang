@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 int main(void) {
     TypeDesc *res = NULL;
@@ -127,6 +128,16 @@ int main(void) {
     assert(erros_semanticos() == e13 + 4);
     verifica_retorno(p_vazio, 0, atr("", &type_void, 26), 26);
     assert(erros_semanticos() == e13 + 4);
+
+    /* Coerção (#11): int -> float vira cast no C; os demais casos não mudam */
+    Atr c1 = coage(atr("x", &type_int, 13), &type_float);
+    assert(c1.tipo == &type_float && strcmp(c1.cod, "((double)x)") == 0);
+    Atr c2 = coage(atr("y", &type_float, 13), &type_float);
+    assert(c2.tipo == &type_float && strcmp(c2.cod, "y") == 0);
+    Atr c3 = coage(atr("z", &type_int, 13), &type_int);
+    assert(c3.tipo == &type_int && strcmp(c3.cod, "z") == 0);
+    Atr mist = atr_bin(atr("1", &type_int, 14), "+", atr("2.5", &type_float, 14), OP_ARITMETICO);
+    assert(mist.tipo == &type_float && strcmp(mist.cod, "(((double)1) + 2.5)") == 0);
 
     puts("tipos: OK");
     return 0;

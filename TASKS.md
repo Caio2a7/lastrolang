@@ -25,7 +25,7 @@ Pilha de escopos (scope stack): cada nível guarda (escopo, subprograma dono, se
 Área: semântico.
 
 **[#7](https://github.com/Caio2a7/lastro/issues/7) Abrir e fechar escopos na gramática**\
-`nome_sub` registra o subprograma antes do corpo (assim a recursão funciona) e insere os parâmetros; `push`/`pop` em bloco e no `for`; sem shadowing (decidido em #1); `ler`/`escrever` registrados como embutidos.\
+`nome_sub` registra o subprograma antes do corpo (assim a recursão funciona) e insere os parâmetros; `push`/`pop` em bloco e no `for`; shadowing permitido em escopo aninhado (#49, critério 2D); `ler`/`escrever` registrados como embutidos.\
 Área: sintático, semântico. Critério: 2C, 2D.
 
 **[#8](https://github.com/Caio2a7/lastro/issues/8) Verificar as declarações**\

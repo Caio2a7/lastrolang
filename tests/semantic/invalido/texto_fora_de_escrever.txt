@@ -1,0 +1,8 @@
+proc recebe(int n) {
+}
+
+proc main() {
+    recebe("abc");
+    ler("abc");
+    escrever(ref "abc");
+}

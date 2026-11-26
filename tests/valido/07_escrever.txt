@@ -1,0 +1,12 @@
+// escrever com int, float, bool e texto (issue #48). Saída esperada (uma por linha):
+// 7 2.5 true false true Soma: 100% feita, ação concluída
+proc main() {
+    int n := 7;
+    escrever(n);
+    escrever(2.5);
+    escrever(1 < 2);
+    bool b := false;
+    escrever(b);
+    escrever(!b && n = 7);
+    escrever("Soma: 100% feita, ação concluída");
+}

@@ -76,10 +76,14 @@ char *cod_fmt(const char *fmt, ...) {
     return s;
 }
 
+Atr coage(Atr e, const TypeDesc *destino) {
+    if (destino->kind != K_FLOAT || e.tipo->kind != K_INT) return e;
+    return atr(cod_fmt("((double)%s)", e.cod), &type_float, e.linha);
+}
+
 Atr atr_bin(Atr a, const char *op_c, Atr b, Op op) {
-    char *cod = cod_fmt("(%s %s %s)", a.cod, op_c, b.cod);
     if (a.tipo->kind == K_ERRO || b.tipo->kind == K_ERRO) {
-        return atr(cod, &type_erro, a.linha);
+        return atr(cod_fmt("(%s %s %s)", a.cod, op_c, b.cod), &type_erro, a.linha);
     }
     TypeDesc *res = tipo_resultado(op, a.tipo, b.tipo);
     if (res->kind == K_ERRO) {
@@ -89,7 +93,12 @@ Atr atr_bin(Atr a, const char *op_c, Atr b, Op op) {
         free(sa);
         free(sb);
     }
-    return atr(cod, res, a.linha);
+    TypeDesc *comum = &type_erro;
+    if (compativel(a.tipo, b.tipo, &comum)) {  /* int op float: o int vira double no C */
+        a = coage(a, comum);
+        b = coage(b, comum);
+    }
+    return atr(cod_fmt("(%s %s %s)", a.cod, op_c, b.cod), res, a.linha);
 }
 
 Atr atr_un(const char *op_c, Atr a, Op op) {
@@ -194,19 +203,30 @@ static void verifica_builtin(const Subprog *p, const Arg *args, int n_args, int 
         if (args->is_ref) {
             erro_semantico(args->linha, "argumento de 'escrever' não aceita 'ref'");
         }
-        if (args->tipo->kind != K_ERRO && !eh_escalar(args->tipo)) {
+        if (args->tipo->kind != K_ERRO && args->tipo->kind != K_TEXTO && !eh_escalar(args->tipo)) {
             char *st = type_str(args->tipo);
-            erro_semantico(args->linha, "'escrever' espera tipo escalar, mas recebeu '%s'", st);
+            erro_semantico(args->linha, "'escrever' espera tipo escalar ou texto, mas recebeu '%s'", st);
             free(st);
         }
     }
 }
 
+/* Nome C do embutido: C não tem sobrecarga, então cada tipo tem a sua função no prólogo. */
+static const char *nome_c_builtin(const char *nome, const Arg *args) {
+    Kind k = args ? args->tipo->kind : K_INT;
+    if (strcmp(nome, "ler") == 0) return k == K_FLOAT ? "ler_float" : "ler_int";  /* bool é int no C */
+    switch (k) {
+    case K_FLOAT: return "escrever_float";
+    case K_BOOL:  return "escrever_bool";
+    case K_TEXTO: return "escrever_texto";
+    default:      return "escrever_int";
+    }
+}
+
 Atr verifica_chamada(const char *nome, Arg *args, int linha) {
-    char *args_cod = junta_args_cod(args);
-    char *cod = cod_fmt("%s(%s)", nome, args_cod);
     Subprog *p = use_sub(nome, linha);
     if (!p) {
+        char *cod = cod_fmt("%s(%s)", nome, junta_args_cod(args));
         libera_args(args);
         return atr(cod, &type_erro, linha);
     }
@@ -216,6 +236,7 @@ Atr verifica_chamada(const char *nome, Arg *args, int linha) {
 
     if (p->is_builtin) {
         verifica_builtin(p, args, n_args, linha);
+        char *cod = cod_fmt("%s(%s)", nome_c_builtin(nome, args), junta_args_cod(args));
         libera_args(args);
         return atr(cod, p->ret, linha);
     }
@@ -247,9 +268,12 @@ Atr verifica_chamada(const char *nome, Arg *args, int linha) {
                            pos, nome, sp, sa);
             free(sp);
             free(sa);
+        } else {  /* por valor: int em parâmetro float vira (double) no C */
+            arg->cod = coage(atr(arg->cod, arg->tipo, arg->linha), param->type).cod;
         }
     }
 
+    char *cod = cod_fmt("%s(%s)", nome, junta_args_cod(args));
     libera_args(args);
     return atr(cod, p->ret, linha);
 }
@@ -293,7 +317,8 @@ int erros_semanticos(void) {
 }
 
 int nome_livre(const char *nome, int linha) {
-    Symbol *sym = find_name(nome);  /* escopo atual e todos os envolventes */
+    /* Só o escopo do topo: num escopo de dentro o nome esconde o de fora (shadowing, critério 2D) */
+    Symbol *sym = table_lookup(scope_level(scope_depth())->name, nome);
     if (sym) {
         erro_semantico(linha, "'%s' já declarado no escopo '%s'", nome, sym->scope);
         return 0;

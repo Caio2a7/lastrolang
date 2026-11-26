@@ -32,8 +32,9 @@ char *c_decl(const TypeDesc *t, const char *nome);
 /* "{\n" + cmds indentados + "}\n". */
 char *gen_bloco(const char *cmds);
 
-/* int x = e;  arrays copiam com memcpy. */
-char *gen_decl(const TypeDesc *t, const char *nome, Atr e);
+/* int x = e;  arrays copiam com memcpy. sombra = 1 quando x esconde um nome de fora:
+ * e é calculado antes num temporário, porque em C o x novo já valeria dentro de e. */
+char *gen_decl(const TypeDesc *t, const char *nome, Atr e, int sombra);
 
 /* int v[n] := [e; n]: laço de preenchimento com goto. */
 char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int linha);

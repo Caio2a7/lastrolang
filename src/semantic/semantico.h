@@ -36,6 +36,10 @@ TypeDesc *tipo_resultado(Op op, TypeDesc *a, TypeDesc *b);
  * float -> int e void são rejeitados. */
 int tipo_atribuivel(const TypeDesc *destino, const TypeDesc *origem);
 
+/* Coerção int -> float: se destino é float e e é int, devolve "((double)e)" com tipo float.
+ * Nos demais casos devolve e sem mudança. */
+Atr coage(Atr e, const TypeDesc *destino);
+
 /* Verifica atribuição/inicialização; reporta erro em 'linha' se incompatível. */
 int verifica_atribuicao(const TypeDesc *destino, const TypeDesc *origem, int linha, const char *ctx);
 
@@ -74,8 +78,9 @@ int erros_semanticos(void);
 
 /* ---------- Declarações e usos de nomes (consultam as três tabelas) ---------- */
 
-/* 1 se o nome pode ser declarado agora: não é símbolo visível (sem shadowing),
- * nem subprograma, nem tipo. Se não puder, reporta o erro e devolve 0. */
+/* 1 se o nome pode ser declarado agora: não está no escopo do topo (escopos de fora
+ * podem ter o mesmo nome: shadowing), nem é subprograma, nem tipo.
+ * Se não puder, reporta o erro e devolve 0. */
 int nome_livre(const char *nome, int linha);
 
 /* Declara variável, constante ou parâmetro no escopo do topo; NULL se o nome não estiver livre. */

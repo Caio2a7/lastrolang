@@ -1,0 +1,18 @@
+const int N := 1.5;
+
+func inteiro(float x) -> int {
+    return x;
+}
+
+proc recebe(int n) {
+}
+
+proc main() {
+    int i := 2.5;
+    float f := 1.0;
+    i := f;
+    recebe(f);
+    int[3] v := [0; 3];
+    v[f] := 1;
+    int[2] w := [0.5; 2];
+}
