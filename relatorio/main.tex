@@ -14,46 +14,63 @@
 \usepackage{tabularx}
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage[hidelinks]{hyperref}
+\usepackage[hidelinks,pdftitle={LastroLang: especificação da linguagem e implementação do compilador},
+  pdfauthor={Caio Daniel Fonseca de Araújo, Flawbert Lorran da Silva Costa, Murilo Antonio Lima da Costa, Rodrigo Ferreira da Nobrega}]{hyperref}
 
 \input{estilo}
 
 \sloppy
 
-\title{LastroLang: especificação da linguagem\\e implementação do compilador}
-
-\author{Caio Daniel Fonseca de Araújo\inst{1}, Flawbert Lorran da Silva Costa\inst{1},\\
-  Murilo Antonio Lima da Costa\inst{1}, Rodrigo Ferreira da Nobrega\inst{1}}
-
-\address{Departamento de Informática e Matemática Aplicada (DIMAp)\\
-  Universidade Federal do Rio Grande do Norte (UFRN) -- Natal, RN -- Brasil\\[6pt]
-  DIM0548 -- Engenharia de Linguagens -- Grupo 02 -- 1º de dezembro de 2026}
-
 \begin{document}
 
-\maketitle
+% Capa: logos no topo, título, autores e instituição centralizados e o resumo, com a
+% disciplina e a data no rodapé. Usa as fontes do modelo SBC (\XVIPT no título).
+\begin{titlepage}
+  {\centering
+  % alturas diferentes para as letras dos dois logos ficarem do mesmo tamanho (a UFRN
+  % tem a legenda embaixo); centralizados na vertical e alinhados às margens do fio
+  $\vcenter{\hbox{\includegraphics[height=1.8cm]{figuras/ufrn}}}$\hfill
+  $\vcenter{\hbox{\includegraphics[height=1.4cm]{figuras/imd}}}$\par
+  \vspace{8pt}
+  {\color{black!35}\rule{\textwidth}{0.4pt}}\par
+  \vspace{3.5cm}
 
-\begin{resumo}
-  Este documento especifica a linguagem Lastro nos níveis léxico, sintático e
-  semântico e descreve o compilador que a traduz para um C simplificado, aceito
-  pelo \texttt{gcc} sem erros. Ele registra as principais decisões de
-  implementação, as estruturas de dados e as verificações feitas sobre os
-  programas, a organização do código-fonte, as instruções de geração e uso, as
-  limitações da linguagem e da implementação e os pontos de melhoria futura.
-\end{resumo}
+  {\XVIPT\bfseries LastroLang: especificação da linguagem\\
+    e implementação do compilador\par}
+  \vspace{1.2cm}
 
-\begin{abstract}
-  This document specifies the Lastro language at the lexical, syntactic and
-  semantic levels and describes the compiler that translates it into a
-  simplified C accepted by \texttt{gcc} without errors. It records the main
-  implementation decisions, the data structures and the checks performed on
-  programs, the source code organization, build and usage instructions, the
-  limitations of the language and of its implementation, and future work.
-\end{abstract}
+  {\bfseries
+    Caio Daniel Fonseca de Araújo\\
+    Flawbert Lorran da Silva Costa\\
+    Murilo Antonio Lima da Costa\\
+    Rodrigo Ferreira da Nobrega\par}
+  \vspace{0.8cm}
+
+  Instituto Metrópole Digital (IMD)\\
+  Universidade Federal do Rio Grande do Norte (UFRN)\\
+  Natal, RN -- Brasil\par}
+  \vspace{1.5cm}
+
+  \begin{resumo}
+    Este documento especifica a linguagem Lastro nos níveis léxico, sintático e
+    semântico e descreve o compilador que a traduz para um C simplificado, aceito
+    pelo \texttt{gcc} sem erros. Ele registra as principais decisões de
+    implementação, as estruturas de dados e as verificações feitas sobre os
+    programas, a organização do código-fonte, as instruções de geração e uso, as
+    limitações da linguagem e da implementação e os pontos de melhoria futura.
+  \end{resumo}
+
+  \vfill
+  {\centering
+  {\color{black!35}\rule{\textwidth}{0.4pt}}\par
+  \vspace{6pt}
+  DIM0548 -- Engenharia de Linguagens -- Grupo 02\\
+  1º de dezembro de 2026\par}
+\end{titlepage}
+\setcounter{page}{2}   % a capa conta como página 1 (sem número)
 
 % Sumário em página própria. O modelo SBC suprime a numeração; o relatório numera as
 % páginas a partir daqui para o sumário servir.
-\clearpage
 \pagestyle{plain}
 \tableofcontents
 \clearpage
@@ -65,6 +82,8 @@
 \input{secoes/05-limitacoes}
 \input{secoes/06-melhorias}
 
+% Lista as referências mesmo sem \cite (as seções ainda estão sendo escritas).
+\nocite{*}
 \bibliographystyle{sbc}
 \bibliography{referencias}
 
