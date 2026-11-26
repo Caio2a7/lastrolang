@@ -23,6 +23,9 @@ int main(void) {
     char *s = type_str(type_array(&type_int, 10));
     assert(strcmp(s, "int[10]") == 0);
     free(s);
+    s = type_str(type_add_dim(type_array(&type_int, 2), 3));
+    assert(strcmp(s, "int[2][3]") == 0);
+    free(s);
 
     /* Símbolos: insere, busca, duplicata */
     assert(table_insert("global", "TAXA", (Symbol){ .category = C_CONST, .type = &type_int }));

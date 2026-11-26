@@ -76,15 +76,27 @@ int main(void) {
     assert(tipo_atribuivel(&type_int, &type_erro));
 
     /* Indexação (#10): array + int OK; não-array e índice bool geram erro e devolvem type_erro */
-    Symbol s_arr = { .category = C_VAR, .type = arr };
-    Symbol s_int = { .category = C_VAR, .type = &type_int };
     int e10 = erros_semanticos();
-    Atr elem = verifica_indexacao("v", &s_arr, atr("0", &type_int, 10), 10);
+    Atr elem = verifica_indexacao(atr("v", arr, 10), atr("0", &type_int, 10), 10);
     assert(elem.tipo == &type_int && erros_semanticos() == e10);
-    Atr idx_err = verifica_indexacao("v", &s_arr, atr("1", &type_bool, 11), 11);
+    Atr idx_err = verifica_indexacao(atr("v", arr, 11), atr("1", &type_bool, 11), 11);
     assert(idx_err.tipo == &type_int && erros_semanticos() == e10 + 1);
-    Atr nao_arr = verifica_indexacao("x", &s_int, atr("0", &type_int, 12), 12);
+    Atr nao_arr = verifica_indexacao(atr("x", &type_int, 12), atr("0", &type_int, 12), 12);
     assert(nao_arr.tipo == &type_erro && erros_semanticos() == e10 + 2);
+
+    /* Matrizes (#17): int[2][3] é array de array; m[i] é int[3], m[i][j] é int */
+    TypeDesc *mat = type_add_dim(type_array(&type_int, 2), 3);
+    assert(mat->size == 2 && mat->elem->size == 3 && mat->elem->elem == &type_int);
+    Atr linha = verifica_indexacao(atr("m", mat, 13), atr("0", &type_int, 13), 13);
+    assert(type_equal(linha.tipo, type_array(&type_int, 3)));
+    assert(verifica_indexacao(linha, atr("1", &type_int, 13), 13).tipo == &type_int);
+    assert(erros_semanticos() == e10 + 2);
+    TypeDesc *forma = type_add_dim(type_array(&type_void, 2), 3);
+    assert(verifica_preenche("m", mat, forma, atr("0", &type_int, 14), 14) == 2);
+    assert(verifica_preenche("m", mat, type_array(&type_void, 2), atr("0", &type_int, 14), 14) == 1);
+    assert(erros_semanticos() == e10 + 3);  /* sobra int[3] para um int */
+    assert(verifica_preenche("m", mat, type_add_dim(type_array(&type_void, 2), 2), atr("0", &type_int, 15), 15) == 2);
+    assert(erros_semanticos() == e10 + 4);  /* 2ª dimensão: 3 != 2 */
 
     /* Chamadas e retorno (#13): aridade, tipos (int -> float), ref, proc em expr, return */
     type_init();

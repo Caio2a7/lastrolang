@@ -1,0 +1,32 @@
+proc dobra(ref int[2][3] m) {
+    for (int i := 0 to 1) {
+        for (int j := 0 to 2) {
+            m[i][j] := m[i][j] * 2;
+        }
+    }
+}
+
+proc zera(int[2][3] m) {
+    m[0][0] := 0;
+}
+
+func soma_linha(int[3] l) -> int {
+    return l[0] + l[1] + l[2];
+}
+
+proc main() {
+    int[3] linha := [1; 3];
+    int[2][3] m := [linha; 2];
+    float[2][2] f := [1; 2, 2];
+    m[1][2] := 5;
+    dobra(ref m);
+    zera(m);
+    escrever(m[0][0]);
+    escrever(m[1][2]);
+    escrever(soma_linha(m[1]));
+    m[0] := m[1];
+    escrever(m[0][2]);
+    escrever(f[1][1]);
+    int[2][3] n := m;
+    escrever(n[0][2]);
+}
