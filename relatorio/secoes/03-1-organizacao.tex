@@ -1,0 +1,13 @@
+% Issue #52 (Documentar a organização do código e as decisões de implementação).
+% - Diretórios e conteúdo de cada arquivo (src/lexer, src/parser, src/semantic, src/gen,
+%   tests, programas, Makefile)
+% - Figura do fluxo: entrada -> yylex() -> yyparse() com ações semânticas -> C -> gcc
+% - Passada única sem árvore sintática e o atributo Atr (código C, tipo, linha, eh_const)
+% - C simplificado: if (!c) goto, rótulos _Ln, temporários _tN; bool -> int, float -> double,
+%   const -> static const, ref -> ponteiro, array por valor com memcpy
+% - Embutidos ler/escrever com uma função C por tipo
+% - Saída e erros: stdout/stderr, código de saída, opções -t e -s
+% - Decisões tomadas e o motivo
+
+\subsection{Organização do código e decisões de implementação}
+\label{sec:organizacao}

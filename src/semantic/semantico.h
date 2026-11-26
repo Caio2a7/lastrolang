@@ -52,6 +52,8 @@ Atr verifica_indexacao(Atr base, Atr idx, int linha);
  * Devolve k, ou 0 se não houver o que gerar (t não é array ou há dimensões demais). */
 int verifica_preenche(const char *nome, const TypeDesc *t, const TypeDesc *forma, Atr e, int linha);
 
+Atr verifica_campo(Atr base, const char *nome, int linha);
+
 /* Argumento de chamada em lista encadeada, na ordem da esquerda para a direita. */
 typedef struct Arg {
     char *cod;
@@ -63,6 +65,8 @@ typedef struct Arg {
 
 /* Cria um nó de argumento para a lista de argumentos de uma chamada. */
 Arg *arg_novo(char *cod, TypeDesc *tipo, int is_ref, int linha);
+
+void libera_args(Arg *args);
 
 /* Verifica chamada de subprograma (existência, aridade, tipos, ref e embutidos). */
 Atr verifica_chamada(const char *nome, Arg *args, int linha);
@@ -103,5 +107,7 @@ Subprog *use_sub(const char *name, int line);
 
 /* Acrescenta o parâmetro ao fim da lista do subprograma e conta n_params. */
 void append_param(Subprog *sub, Symbol *param);
+
+TypeDesc *declare_type(const char *name, Field *fields, int line);
 
 #endif

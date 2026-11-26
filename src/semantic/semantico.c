@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "semantico.h"
+#include "gen/gen.h"
 
 /* Contador de erros semânticos; define o código de saída do compilador. */
 static int total_erros = 0;
@@ -138,14 +139,15 @@ Atr verifica_indexacao(Atr base, Atr idx, int linha) {
         erro_semantico(idx.linha, "índice de '%s' tem de ser 'int', mas recebeu '%s'", base.cod, si);
         free(si);
     }
-    if (base.tipo->kind == K_ERRO) return atr(cod, &type_erro, linha);
-    if (base.tipo->kind != K_ARRAY) {
-        char *st = type_str(base.tipo);
+    TypeDesc *t = base.tipo;
+    if (t->kind == K_ERRO) return atr(cod, &type_erro, linha);
+    if (t->kind != K_ARRAY) {
+        char *st = type_str(t);
         erro_semantico(linha, "'%s' não é array (tipo '%s')", base.cod, st);
         free(st);
         return atr(cod, &type_erro, linha);
     }
-    Atr res = atr(cod, base.tipo->elem, linha);
+    Atr res = atr(cod, t->elem, linha);
     res.eh_const = base.eh_const;
     return res;
 }
@@ -180,6 +182,22 @@ int verifica_preenche(const char *nome, const TypeDesc *t, const TypeDesc *forma
     return k;
 }
 
+Atr verifica_campo(Atr base, const char *nome, int linha) {
+    if (base.tipo->kind == K_RECORD) {
+        for (const Field *campo = base.tipo->fields; campo; campo = campo->next) {
+            if (strcmp(campo->name, nome) == 0) {
+                Atr res = atr(gen_campo(base.cod, nome), campo->type, linha);
+                res.eh_const = base.eh_const;
+                return res;
+            }
+        }
+        erro_semantico(linha, "registro '%s' não tem campo '%s'", base.tipo->name, nome);
+    } else if (base.tipo->kind != K_ERRO) {
+        erro_semantico(linha, "acesso ao campo '%s' exige um registro", nome);
+    }
+    return atr(base.cod, &type_erro, linha);
+}
+
 Arg *arg_novo(char *cod, TypeDesc *tipo, int is_ref, int linha) {
     Arg *a = malloc(sizeof *a);
     if (!a) {
@@ -202,7 +220,7 @@ static char *junta_args_cod(const Arg *args) {
     return res;
 }
 
-static void libera_args(Arg *args) {
+void libera_args(Arg *args) {
     while (args) {
         Arg *next = args->next;
         free(args);
@@ -421,4 +439,21 @@ void append_param(Subprog *sub, Symbol *param) {
 
     *next_param_ptr = param;
     sub->n_params++;
+}
+
+TypeDesc *declare_type(const char *name, Field *fields, int line) {
+    if (!nome_livre(name, line)) {
+        return NULL;
+    }
+
+    for (const Field *campo = fields; campo; campo = campo->next) {
+        for (const Field *outro = campo->next; outro; outro = outro->next) {
+            if (strcmp(campo->name, outro->name) == 0) {
+                erro_semantico(line, "campo '%s' já declarado no registro '%s'", campo->name, name);
+                return NULL;
+            }
+        }
+    }
+
+    return type_insert(name, (TypeDesc){ .kind = K_RECORD, .fields = fields });
 }

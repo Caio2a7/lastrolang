@@ -143,7 +143,7 @@ Todas as construções, com saída em stdout: `./build/compilador < x.txt > x.c 
 Área: geração de C. Critério: 4B.
 
 **[#30](https://github.com/Caio2a7/lastro/issues/30) Documentar a análise léxica**\
-Tokens, casamento mais longo (longest match) e erros, em `docs/analise-lexica.md`.\
+Tokens, casamento mais longo (longest match) e erros, em `relatorio/secoes/02-1-lexico.tex`.\
 Área: documentação. Critério: Doc. 2A.
 
 **[#48](https://github.com/Caio2a7/lastro/issues/48) Escrever texto, float e bool com escrever**\

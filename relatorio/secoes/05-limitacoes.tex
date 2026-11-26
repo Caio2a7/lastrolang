@@ -1,0 +1,17 @@
+% Issue #53 (Documentar as limitações e as melhorias futuras): limitações.
+% Falta acrescentar:
+% - Linguagem: sem tipo string (texto só em escrever), sem ponteiros nem alocação dinâmica,
+%   sem switch, literal real só no formato 2.5, coerção só de int para float,
+%   tamanho de array fixo em compilação, e o que não sair até a entrega
+% - Implementação: passada única sem árvore sintática; limites fixos de 100 níveis de
+%   escopo (MAX_SCOPE_DEPTH) e 256 laços aninhados (MAX_LACOS); faixa de índice só no que a #12 cobrir
+
+\section{Limitações}
+\label{sec:limitacoes}
+
+O analisador sintático usa a recuperação de erro padrão do yacc e para no
+primeiro erro de sintaxe. Como todo \cod{ERRO} provoca um erro de sintaxe, o
+compilador relata só o primeiro caractere inválido do programa. O Problema~6
+previa que o léxico seguisse adiante depois de um erro, e a implementação atual
+não faz isso. O léxico também não confere a faixa do literal inteiro:
+\cod{99999999999999999999} passa e só daria problema ao compilar o C gerado.

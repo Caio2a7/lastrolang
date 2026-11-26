@@ -25,11 +25,27 @@ proc main() {
 }
 ```
 
-- **Tipos:** `int`, `bool` e arrays de tamanho fixo (`int[MAX]`), inicializados com `[valor; tamanho]`.
+- **Tipos:** `int`, `bool`, `float`, registros e arrays de tamanho fixo (`int[MAX]`).
 - **Constantes globais:** `const int MAX := 1000;`
 - **Subprogramas:** `proc` (sem retorno) e `func ... -> tipo`. Parâmetros `ref` são passados por referência (alteram a variável do chamador) e marcados também na chamada: `ler(ref n)`.
 - **Comandos:** declaração com inicialização obrigatória, atribuição, chamada, `if` / `else if` / `else`, `while`, `for (int i := a to b)`, `break`, `continue` e `return`.
 - **Comentários:** `//` até o fim da linha.
+
+### Registros
+
+```lastro
+type rational_t {
+    int numerador;
+    int denominador;
+};
+
+proc main() {
+    rational_t r := {1, 2};
+    escrever(r.numerador);
+}
+```
+
+Declare tipos e constantes no nível global, antes dos subprogramas. Cada campo usa um tipo disponível no momento da declaração e aparece uma vez por nome no registro. O inicializador recebe um valor por campo, na ordem da declaração. Arrays usam `[valor; tamanho]` e podem ser copiados para campos de mesmo tipo. Registros do mesmo tipo podem ser copiados, passados por valor ou com `ref` e retornados por funções. Use `.` para acessar campos, inclusive em elementos de arrays como `v[i].numerador`.
 
 ### Decisões de projeto
 
@@ -70,6 +86,7 @@ make                                  # gera build/compilador
 make run P=tests/valido/03_funcao_juros.txt  # traduz, compila com gcc -Wall -Werror e executa
 make test                             # válidos passam pelo gcc; inválidos têm de dar erro
 make conflitos                        # resume os conflitos do autômato LALR (build/y.output)
+make doc                              # gera RELATORIO.pdf a partir de relatorio/ (LaTeX, modelo SBC)
 make clean                            # remove build/
 ```
 

@@ -1,0 +1,61 @@
+% Estilo comum do relatório: código Lastro, código C e saída do compilador.
+% Em tons de cinza, como recomenda o modelo SBC.
+
+% Código curto no meio do texto e nas tabelas.
+\newcommand{\cod}[1]{\texttt{#1}}
+
+% Sem esticar o espaço entre parágrafos para encher a página: com tabelas e listagens,
+% o \flushbottom do modelo abria buracos antes dos títulos.
+\raggedbottom
+
+\makeatletter
+% O modelo só define \section e \subsection; este nível segue o mesmo padrão, em itálico.
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
+                       {-6\p@ \@plus -2\p@ \@minus -2\p@}%
+                       {0.1\p@}%
+                       {\normalfont\normalsize\bfseries\itshape}}
+
+% O hyperref troca o \@lbibitem do modelo e volta a imprimir o rótulo [Autor Ano] na
+% margem. Refaz a versão do modelo (referência sem rótulo), mantendo a âncora do link.
+\def\@lbibitem[#1]#2{\item[]%
+  \Hy@raisedlink{\hyper@anchorstart{cite.#2\@extra@b@citeb}\hyper@anchorend}%
+  \if@filesw{\let\protect\noexpand\immediate
+    \write\@auxout{\string\bibcite{#2}{#1}}}\fi\ignorespaces}
+\makeatother
+
+\lstdefinelanguage{Lastro}{
+  morekeywords={const,proc,func,int,float,bool,if,else,while,for,to,
+                break,continue,return,ref,true,false},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{black!60},
+  stringstyle=\color{black!75},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  upquote=true,
+  frame=lines,
+  framerule=0.4pt,
+  rulecolor=\color{black!40},
+  framesep=4pt,
+  xleftmargin=0.8cm,
+  xrightmargin=0.8cm,
+  aboveskip=6pt,
+  belowskip=6pt,
+  % acentos em comentários e textos (listings lê byte a byte)
+  literate={á}{{\'a}}1 {à}{{\`a}}1 {â}{{\^a}}1 {ã}{{\~a}}1
+           {é}{{\'e}}1 {ê}{{\^e}}1 {í}{{\'i}}1 {ó}{{\'o}}1
+           {ô}{{\^o}}1 {õ}{{\~o}}1 {ú}{{\'u}}1 {ç}{{\c{c}}}1
+           {Á}{{\'A}}1 {É}{{\'E}}1 {Ó}{{\'O}}1 {Ç}{{\c{C}}}1,
+}
+
+\lstdefinestyle{lastro}{language=Lastro}
+\lstdefinestyle{c}{language=C}
+% saída do terminal: sem destaque de palavras
+\lstdefinestyle{saida}{language={}, basicstyle=\ttfamily\small\color{black!85}}

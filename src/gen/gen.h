@@ -39,6 +39,8 @@ char *gen_decl(const TypeDesc *t, const char *nome, Atr e, int sombra);
 /* int[n][m] v := [e; n, m]: laços aninhados de preenchimento com goto, um por tamanho (k). */
 char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int k);
 
+char *gen_decl_registro(TypeDesc *t, const char *nome, const Arg *valores, int linha);
+
 char *gen_atrib(Atr alvo, Atr e);
 
 /* if/else; senao é NULL quando não há else. */
@@ -51,5 +53,9 @@ char *gen_for(Laco l, const char *var, Atr ini, Atr fim, const char *corpo);
 
 /* Cabeçalho e corpo de um subprograma; main vira int main(void). */
 char *gen_sub(const Subprog *sub, const char *corpo);
+
+char *gen_decl_type(const TypeDesc *t);
+
+char *gen_campo(const char *base, const char *nome);
 
 #endif
