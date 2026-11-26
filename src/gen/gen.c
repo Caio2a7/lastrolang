@@ -56,7 +56,7 @@ const char *c_tipo(const TypeDesc *t) {
     switch (t->kind) {
     case K_FLOAT:  return "double";
     case K_VOID:   return "void";
-    case K_RECORD: return t->name;
+    case K_RECORD: return cod_fmt("_tipo_%s", t->name);
     default:       return "int";  /* int, bool e erro */
     }
 }
@@ -95,10 +95,8 @@ char *gen_bloco(const char *cmds) {
     return cod_fmt("{\n%s}\n", indenta(cmds));
 }
 
-/* Condição negada para o "if (...) goto". Todo cod que começa com '(' já está
- * inteiro entre parênteses (atr_bin, atr_un e "(*x)"), então não precisa de outro par. */
 static char *nega(Atr c) {
-    return cod_fmt(c.cod[0] == '(' ? "!%s" : "!(%s)", c.cod);
+    return cod_fmt("!(%s)", c.cod);
 }
 
 char *gen_decl(const TypeDesc *t, const char *nome, Atr e, int sombra) {
@@ -140,6 +138,48 @@ char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int linha) {
                    i, i,
                    teste,
                    fim);
+}
+
+char *gen_decl_registro(TypeDesc *t, const char *nome, const Arg *valores, int linha) {
+    if (t->kind != K_RECORD) {
+        erro_semantico(linha, "'%s' não é registro; { ... } só inicializa registro", nome);
+        return "";
+    }
+
+    /* O temporário permite copiar campos array e mantém a nova variável fora do inicializador. */
+    char *tmp = cod_fmt("_t%d", novo());
+    char *decl = c_decl(t, tmp);
+    char *cod = cod_fmt("%s;\n", decl);
+    free(decl);
+
+    const Field *campo = t->fields;
+    for (; campo && valores; campo = campo->next, valores = valores->next) {
+        char *ctx = cod_fmt("inicialização do campo '%s'", campo->name);
+        if (verifica_atribuicao(campo->type, valores->tipo, valores->linha, ctx)) {
+            Atr alvo = atr(gen_campo(tmp, campo->name), campo->type, valores->linha);
+            Atr valor = atr(valores->cod, valores->tipo, valores->linha);
+            Atr inicializador = coage(valor, campo->type);
+            char *atrib = gen_atrib(alvo, inicializador);
+            char *anterior = cod;
+            cod = cod_fmt("%s%s", anterior, atrib);
+            free(anterior);
+            free(atrib);
+            free(alvo.cod);
+            if (inicializador.cod != valor.cod) free(inicializador.cod);
+        }
+        free(ctx);
+    }
+    char *res = "";
+    if (campo || valores) {
+        erro_semantico(linha, "quantidade de valores incompatível na inicialização de '%s'", nome);
+    } else {
+        decl = gen_decl(t, nome, atr(tmp, t, linha), 0);
+        res = cod_fmt("%s%s", cod, decl);
+        free(decl);
+    }
+    free(cod);
+    free(tmp);
+    return res;
 }
 
 char *gen_atrib(Atr alvo, Atr e) {
@@ -216,4 +256,29 @@ char *gen_sub(const Subprog *sub, const char *corpo) {
     char *fim = eh_main && !sub->is_func ? "return 0;\n" : "";
     return cod_fmt("%s %s(%s) {\n%s}\n\n", ret, sub->name, *params ? params : "void",
                    indenta(cod_fmt("%s%s%s", copias, corpo, fim)));
+}
+
+#define PREFIXO_CAMPO "_campo_"
+
+char *gen_campo(const char *base, const char *nome) {
+    return cod_fmt("(%s." PREFIXO_CAMPO "%s)", base, nome);
+}
+
+char *gen_decl_type(const TypeDesc *t) {
+    /* Prefixos evitam colisões dos nomes Lastro com palavras reservadas e macros de C. */
+    char *campos = cod_fmt("");
+    for (const Field *campo = t->fields; campo; campo = campo->next) {
+        char *nome = cod_fmt(PREFIXO_CAMPO "%s", campo->name);
+        char *decl = c_decl(campo->type, nome);
+        char *anterior = campos;
+        campos = cod_fmt("%s%s;\n", anterior, decl);
+        free(anterior);
+        free(decl);
+        free(nome);
+    }
+    char *corpo = indenta(campos);
+    char *res = cod_fmt("typedef struct {\n%s} %s;\n", corpo, c_tipo(t));
+    free(corpo);
+    free(campos);
+    return res;
 }

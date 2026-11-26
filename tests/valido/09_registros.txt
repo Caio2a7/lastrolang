@@ -1,0 +1,39 @@
+type Item {
+    int valor;
+};
+
+const int TAM := 2;
+
+type Caixa {
+    Item[TAM] itens;
+    bool[TAM] ativos;
+    float peso;
+};
+
+func com_valor(Item item, int valor) -> Item {
+    item.valor := valor;
+    return item;
+}
+
+proc soma_um(ref int valor) {
+    valor := valor + 1;
+}
+
+proc atualiza(ref Caixa caixa) {
+    if (caixa.ativos[0]) {
+        soma_um(ref caixa.itens[0].valor);
+    }
+}
+
+proc main() {
+    Item item := {2};
+    Item[TAM] itens := [item; TAM];
+    bool[TAM] ativos := [true; TAM];
+    Caixa caixa := {itens, ativos, 3};
+    caixa.itens[1] := com_valor(caixa.itens[0], 7);
+    atualiza(ref caixa);
+    escrever(item.valor);
+    escrever(caixa.itens[0].valor);
+    escrever(caixa.itens[1].valor);
+    escrever(caixa.peso);
+}

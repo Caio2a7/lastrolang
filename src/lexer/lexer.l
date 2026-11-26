@@ -39,6 +39,7 @@ ident    {letra}({letra}|{digito}|_)*
 "ref"         { return REF; }
 "true"        { return TRUE; }
 "false"       { return FALSE; }
+"type"        { return TYPE; }
 
 ":="          { return ASSIGN; }
 "="           { return EQ; }
