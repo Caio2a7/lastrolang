@@ -1,0 +1,146 @@
+% Issue #30 (Documentar a análise léxica), concluída; migrada do docs/analise-lexica.md.
+% Issue #29: revisar contra o lexer.l final (#17 e #19 podem acrescentar tokens).
+
+\subsection{Léxico}
+\label{sec:lexico}
+
+O analisador léxico de Lastro fica em \cod{src/lexer/lexer.l}, e o flex o
+transforma na função \cod{yylex()} \cite{levine2009}. Quem comanda a leitura é o
+analisador sintático, que pede um token por vez. A cada pedido, o léxico lê a
+entrada padrão até fechar o próximo lexema e devolve o código do token. Se o
+token tem valor, como um identificador ou um número, o lexema vai para
+\cod{yylval.str}. A opção \cod{\%option yylineno} guarda a linha corrente, e
+todas as mensagens de erro do compilador usam esse número, sejam elas léxicas,
+sintáticas ou semânticas. O léxico só consulta a tabela de tipos, para devolver
+\cod{TYPE\_ID} quando o identificador é o nome de um tipo. Ele entrega só o texto
+do identificador, e o analisador sintático decide se aquilo é uma declaração ou
+um uso, como fixamos no Problema~6.
+
+\subsubsection*{Tokens e expressões regulares}
+
+A especificação parte de três definições auxiliares: \cod{digito = [0-9]},
+\cod{letra = [a-zA-Z]} e \cod{ident = \{letra\}(\{letra\}|\{digito\}|\_)*}.
+A Tabela~\ref{tab:tokens} lista os tokens na mesma ordem em que as regras
+aparecem no arquivo.
+
+\begin{table}[ht]
+\centering
+\caption{Tokens de Lastro, na ordem das regras do \cod{lexer.l}}
+\label{tab:tokens}
+\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Classe & Lexema ou expressão regular & Token \\
+\midrule
+Palavra reservada & \cod{const proc func} & \cod{CONST PROC FUNC} \\
+Palavra reservada & \cod{int float bool} & \cod{INT FLOAT BOOL} \\
+Palavra reservada & \cod{if else while for to} & \cod{IF ELSE WHILE FOR TO} \\
+Palavra reservada & \cod{switch case default} & \cod{SWITCH CASE DEFAULT} \\
+Palavra reservada & \cod{break continue return ref} & \cod{BREAK CONTINUE RETURN REF} \\
+Literal lógico & \cod{true false} & \cod{TRUE FALSE} \\
+Atribuição & \cod{:=} & \cod{ASSIGN} \\
+Relacional & \cod{= != <= < >= >} & \cod{EQ NEQ LE LT GE GT} \\
+Aritmético & \cod{+ - * /} & \cod{PLUS MINUS STAR SLASH} \\
+Lógico & \cod{\&\& || !} & \cod{AND OR NOT} \\
+Tipo de retorno & \cod{->} & \cod{ARROW} \\
+Delimitador & \cod{( ) [ ] \{ \}} & \cod{LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE} \\
+Separador & \cod{, ; .} & \cod{COMMA SEMI DOT} \\
+Literal de texto & \cod{\textbackslash"[\textasciicircum\textbackslash"\textbackslash\textbackslash\textbackslash n]*\textbackslash"} & \cod{LITERAL\_TEXTO} \\
+Texto sem fechar & \cod{\textbackslash"[\textasciicircum\textbackslash"\textbackslash\textbackslash\textbackslash n]*} & \cod{ERRO} \\
+Literal real & \cod{\{digito\}+"."\{digito\}+} & \cod{LITERAL\_FLOAT} \\
+Literal inteiro & \cod{\{digito\}+} & \cod{LITERAL\_INT} \\
+Identificador & \cod{\{ident\}} & \cod{ID} ou \cod{TYPE\_ID} \\
+Erro & \cod{.} (qualquer outro caractere) & \cod{ERRO} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A linguagem tem 20 palavras reservadas, todas em minúsculas. Como ela diferencia
+maiúsculas de minúsculas, \cod{If} e \cod{WHILE} são identificadores comuns.
+\cod{ler} e \cod{escrever} também são identificadores: chegam ao analisador
+sintático como \cod{ID} e entram na tabela de símbolos como subprogramas
+embutidos, de modo que a análise semântica confere uma chamada a eles do mesmo
+jeito que confere qualquer outra.
+
+Todo identificador começa com uma letra ASCII e continua com letras, dígitos ou
+sublinhado. Deixamos as letras acentuadas de fora porque o código de sistemas
+financeiros conversa com bibliotecas C e com sistemas legados (Problema~1), e um
+nome como \cod{preço} não teria equivalente direto no C gerado. O literal
+inteiro é uma sequência de dígitos, sem sinal. Em \cod{-5}, o \cod{-} é o
+operador unário da gramática. O literal real exige dígitos dos dois lados do
+ponto (\cod{2.5}; \cod{2.} e \cod{.5} não são aceitos). Em \cod{2.5}, as regras
+de inteiro e de real casam ao mesmo tempo, e o casamento mais longo escolhe
+\cod{LITERAL\_FLOAT}. Valores monetários continuam sendo guardados como inteiros
+(em centavos ou pontos-base), como decidido no Problema~1. O \cod{float} existe
+para os cálculos não monetários e para a coerção de \cod{int} para \cod{float}
+exigida na avaliação.
+
+O literal de texto fica entre aspas, na mesma linha e sem \cod{\textbackslash},
+e vai para o C exatamente como foi escrito. A linguagem não tem tipo
+\cod{string}: o texto só é aceito como argumento de \cod{escrever}, para as
+mensagens exigidas nos problemas de avaliação. Quando as aspas não fecham na
+linha, ou quando aparece uma \cod{\textbackslash}, só a regra de texto sem
+fechar casa, e o léxico reporta \cod{texto sem aspas de fechamento}.
+
+O léxico já reconhece \cod{SWITCH}, \cod{CASE}, \cod{DEFAULT} e \cod{DOT}, mas a
+gramática ainda não usa esses tokens em nenhuma produção. Eles ficam reservados
+para o comando \cod{switch} e para o acesso a campo de registro, e o yacc os
+aponta como terminais não usados. Quando um deles aparece num programa, o léxico
+o aceita e o analisador sintático acusa erro de sintaxe.
+
+\subsubsection*{Casamento mais longo e palavras reservadas antes de identificador}
+
+O flex desempata com duas regras \cite{aho2007}. Pela primeira, o casamento mais
+longo (\emph{longest match}), vence a expressão que consome mais caracteres a
+partir da posição atual. Se duas expressões casam o mesmo número de caracteres,
+vale a segunda regra: ganha a que foi declarada primeiro no arquivo.
+
+Com o casamento mais longo, os operadores que começam igual não precisam de
+tratamento especial. Em \cod{<=}, tanto \cod{"<="} quanto \cod{"<"} casam, mas a
+primeira leva dois caracteres e ganha. O mesmo vale para \cod{:=} e \cod{=},
+\cod{>=} e \cod{>}, \cod{!=} e \cod{!}, \cod{->} e \cod{-}, e por isso a ordem
+dessas regras no arquivo não muda nada. O comentário segue a mesma lógica:
+\cod{"//".*} sempre consome mais que \cod{"/"}, então duas barras seguidas nunca
+viram duas divisões.
+
+Nas palavras reservadas, quem decide é a ordem. \cod{while} casa \cod{"while"} e
+também \cod{\{ident\}}, com o mesmo comprimento, e só é lido como palavra
+reservada porque essas regras estão antes da regra de identificador no arquivo.
+Se a ordem fosse invertida, o léxico nunca devolveria uma palavra reservada. O
+casamento mais longo cobre o caso inverso. Em \cod{ifx}, a regra \cod{"if"} casa
+dois caracteres e \cod{\{ident\}} casa três, então \cod{ifx} é um identificador,
+e o programador pode dar a uma variável um nome que começa com uma palavra
+reservada.
+
+\subsubsection*{Comentários, espaços e erro léxico}
+
+O léxico reconhece comentários e espaços e os descarta sem gerar token. O
+comentário vai de \cod{//} até o fim da linha (\cod{"//".*}), porque o \cod{.}
+do flex não casa a quebra de linha. A linguagem não tem comentário de bloco,
+então ninguém esquece um comentário aberto pelo caminho, e cada linha pode ser
+lida sozinha, o que atende à prioridade de legibilidade do Problema~1. A
+expressão \cod{[ \textbackslash t\textbackslash r\textbackslash n]+} cobre os
+espaços, que só separam lexemas. O \cod{\textbackslash r} está ali para aceitar
+arquivos com quebra de linha do Windows. As quebras de linha não geram token,
+mas o \cod{yylineno} as conta.
+
+A última regra, \cod{.}, pega qualquer caractere que nenhuma outra regra
+aceitou: \cod{@}, \cod{\#}, um \cod{:} sozinho, um \cod{\&} ou \cod{|} sozinho,
+ou cada byte de uma letra acentuada. A ação chama
+\cod{yyerror("caractere inválido")}, que imprime a linha e o lexema, e devolve o
+token \cod{ERRO}. Nenhuma produção usa esse token, então o analisador sintático
+rejeita o programa no mesmo ponto e o compilador sai com código 1. Com
+\cod{tests/invalido/05\_caractere\_invalido.txt}, a saída é:
+
+\begin{lstlisting}[style=saida]
+linha 3: caractere inválido perto de '@'
+linha 3: syntax error perto de '@'
+REJEITADO: programa contém erro
+\end{lstlisting}
+
+Dois dos erros previstos no Problema~6 formam sequências de tokens válidas e por
+isso passam pelo léxico. Quem os detecta é o analisador sintático. O literal
+fracionário incompleto \cod{10.} vira \cod{LITERAL\_INT DOT}, e a mensagem é
+\cod{syntax error perto de '.'}. O literal mal formado \cod{3x} vira
+\cod{LITERAL\_INT ID}, com a mensagem \cod{syntax error perto de 'x'}. Nos dois
+casos o programa é rejeitado na linha certa.

@@ -1,0 +1,6 @@
+type Item {
+    int valor;
+    bool valor;
+};
+
+proc main() {}

@@ -21,10 +21,14 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
     TypeDesc *type;
     Atr atr;   /* atributo sintetizado das expressões: (texto C, tipo, linha) */
     Arg *arg;  /* lista de argumentos de uma chamada */
+    Field *campo;  /* lista de campos de um tipo do usuário */
 }
 
 %type <type> tipo tipo_base tipo_prim
 %type <num> tamanho
+%type <str> name decl_type
+%type <campo> fields field
+%type <arg> record_values
 
 %token <str> ID LITERAL_INT LITERAL_FLOAT LITERAL_TEXTO
 /* nome que está na tabela de tipos; o léxico decide entre ID e TYPE_ID */
@@ -33,10 +37,10 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
 %type <atr> expr conj rel soma termo fator literal alvo chamada
 %type <arg> args arg
 %type <str> op_rel
-%type <str> consts decl_const subprogs subprog corpo bloco bloco_laco fecha_bloco
+%type <str> globais global decl_const subprogs subprog corpo bloco bloco_laco fecha_bloco
 %type <str> cmds cmd decl_var atrib if_stmt while_stmt for_stmt
 
-%token CONST PROC FUNC INT FLOAT BOOL IF ELSE WHILE FOR TO
+%token CONST PROC FUNC INT FLOAT BOOL IF ELSE WHILE FOR TO TYPE
 %token SWITCH CASE DEFAULT BREAK CONTINUE RETURN REF TRUE FALSE
 
 %token ASSIGN EQ NEQ LT LE GT GE
@@ -54,12 +58,17 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
 
 programa
     : subprogs          { codigo_c = cod_fmt("%s%s", gen_prologo, $1); }
-    | consts subprogs   { codigo_c = cod_fmt("%s%s\n%s", gen_prologo, $1, $2); }
+    | globais subprogs  { codigo_c = cod_fmt("%s%s\n%s", gen_prologo, $1, $2); }
     ;
 
-consts
+globais
+    : global
+    | global globais { $$ = cod_fmt("%s%s", $1, $2); }
+    ;
+
+global
     : decl_const
-    | decl_const consts { $$ = cod_fmt("%s%s", $1, $2); }
+    | decl_type
     ;
 
 decl_const
@@ -71,6 +80,45 @@ decl_const
              * (shadowing). Tamanhos de array saem como número no C, então não dependem do nome. */
             $$ = cod_fmt("static const %s %s = %s;\n", c_tipo($2), $3, coage($5, $2).cod);
         }
+    ;
+
+decl_type
+    : TYPE name LBRACE fields RBRACE SEMI {
+            TypeDesc *t = declare_type($2, $4, yylineno);
+            $$ = t ? gen_decl_type(t) : "";
+        }
+    ;
+
+name
+    : ID
+    | TYPE_ID
+    ;
+
+fields
+    : field
+    | field fields { $1->next = $2; $$ = $1; }
+    ;
+
+field
+    : tipo name SEMI {
+            Field *f = malloc(sizeof *f);
+            if (!f) {
+                perror("malloc");
+                exit(EXIT_FAILURE);
+            }
+            *f = (Field){ .name = $2, .type = $1 };
+            $$ = f;
+        }
+    ;
+
+record_values
+    : expr {
+        $$ = arg_novo($1.cod, $1.tipo, 0, $1.linha);
+    }
+    | expr COMMA record_values {
+        $$ = arg_novo($1.cod, $1.tipo, 0, $1.linha);
+        $$->next = $3;
+    }
     ;
 
 subprogs
@@ -236,6 +284,11 @@ decl_var
             }
             $$ = gen_decl_preenche($1, $2, $1->kind == K_ARRAY ? coage($5, $1->elem) : $5, yylineno);
         }
+    | tipo ID ASSIGN LBRACE record_values RBRACE SEMI {
+            declare_var($2, C_VAR, $1, 0, yylineno);
+            $$ = gen_decl_registro($1, $2, $5, yylineno);
+            libera_args($5);
+        }
     ;
 
 atrib
@@ -252,15 +305,13 @@ alvo
     /* tipo vem da tabela de símbolos; não declarado => type_erro (erro já reportado por use_var) */
     : ID    {
             Symbol *s = use_var($1, yylineno);
-            /* parâmetro ref escalar é ponteiro no C */
+            /* parâmetros ref que não são arrays são ponteiros no C */
             int ptr = s && s->category == C_PARAM && s->is_ref && s->type->kind != K_ARRAY;
             $$ = atr(ptr ? cod_fmt("(*%s)", $1) : $1, s ? s->type : &type_erro, yylineno);
             $$.eh_const = s && s->category == C_CONST;
         }
-    | ID LBRACKET expr RBRACKET {
-            Symbol *s = use_var($1, yylineno);
-            $$ = verifica_indexacao($1, s, $3, yylineno);
-        }
+    | alvo LBRACKET expr RBRACKET { $$ = verifica_indexacao($1, $3, yylineno); }
+    | alvo DOT name               { $$ = verifica_campo($1, $3, yylineno); }
     ;
 
 /* chamada consulta só a tabela de subprogramas: x() com x variável é erro */
