@@ -1,0 +1,5 @@
+proc main() {
+    for (float i := 1 to 10) {
+    }
+}
+// erro: linha 2: syntax error

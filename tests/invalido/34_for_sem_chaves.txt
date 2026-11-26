@@ -1,0 +1,4 @@
+proc main() {
+    for (int i := 1 to 10) escrever(i);
+}
+// erro: linha 2: syntax error
