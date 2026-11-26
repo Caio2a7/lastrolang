@@ -1,0 +1,4 @@
+proc main() {
+    int $saldo := 1;
+}
+// erro: linha 2: caractere inválido

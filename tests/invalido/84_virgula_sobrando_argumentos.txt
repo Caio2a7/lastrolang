@@ -1,0 +1,4 @@
+proc main() {
+    escrever(1,);
+}
+// erro: linha 2: syntax error

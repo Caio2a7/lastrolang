@@ -1,0 +1,4 @@
+proc main() {
+    escrever("saldo\n");
+}
+// erro: linha 2: texto sem aspas de fechamento

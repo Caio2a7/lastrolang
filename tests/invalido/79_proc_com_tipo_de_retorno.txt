@@ -1,0 +1,3 @@
+proc main() -> int {
+}
+// erro: linha 1: syntax error

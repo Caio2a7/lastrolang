@@ -1,0 +1,4 @@
+proc main() {
+    escrever('a');
+}
+// erro: linha 2: caractere inválido
