@@ -1,0 +1,71 @@
+% Documentação do compilador LastroLang (DIM0548), no modelo SBC de artigos.
+% Gerar o PDF na raiz do projeto: make doc  ->  RELATORIO.pdf
+% Cada seção fica em secoes/, um arquivo por issue do GitHub; o comentário no topo
+% de cada arquivo diz o que entra nela.
+
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}        % modelo SBC: A4, margens, Times 12pt, títulos e legendas
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian,shorthands=off]{babel}   % sem atalhos: " aparece em código
+\usepackage{graphicx,url}
+\usepackage{booktabs}            % tabelas sem linhas verticais, como pede o modelo
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\input{estilo}
+
+\sloppy
+
+\title{LastroLang: especificação da linguagem\\e implementação do compilador}
+
+\author{Caio Daniel Fonseca de Araújo\inst{1}, Flawbert Lorran da Silva Costa\inst{1},\\
+  Murilo Antonio Lima da Costa\inst{1}, Rodrigo Ferreira da Nobrega\inst{1}}
+
+\address{Departamento de Informática e Matemática Aplicada (DIMAp)\\
+  Universidade Federal do Rio Grande do Norte (UFRN) -- Natal, RN -- Brasil\\[6pt]
+  DIM0548 -- Engenharia de Linguagens -- Grupo 02 -- 1º de dezembro de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{resumo}
+  Este documento especifica a linguagem Lastro nos níveis léxico, sintático e
+  semântico e descreve o compilador que a traduz para um C simplificado, aceito
+  pelo \texttt{gcc} sem erros. Ele registra as principais decisões de
+  implementação, as estruturas de dados e as verificações feitas sobre os
+  programas, a organização do código-fonte, as instruções de geração e uso, as
+  limitações da linguagem e da implementação e os pontos de melhoria futura.
+\end{resumo}
+
+\begin{abstract}
+  This document specifies the Lastro language at the lexical, syntactic and
+  semantic levels and describes the compiler that translates it into a
+  simplified C accepted by \texttt{gcc} without errors. It records the main
+  implementation decisions, the data structures and the checks performed on
+  programs, the source code organization, build and usage instructions, the
+  limitations of the language and of its implementation, and future work.
+\end{abstract}
+
+% Sumário em página própria. O modelo SBC suprime a numeração; o relatório numera as
+% páginas a partir daqui para o sumário servir.
+\clearpage
+\pagestyle{plain}
+\tableofcontents
+\clearpage
+
+\input{secoes/01-apresentacao}
+\input{secoes/02-especificacao}
+\input{secoes/03-implementacao}
+\input{secoes/04-uso}
+\input{secoes/05-limitacoes}
+\input{secoes/06-melhorias}
+
+\bibliographystyle{sbc}
+\bibliography{referencias}
+
+\end{document}

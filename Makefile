@@ -20,6 +20,21 @@ $(BUILD)/lex.yy.c: src/lexer/lexer.l $(BUILD)/y.tab.h | $(BUILD)
 $(BUILD):
 	mkdir -p $@
 
+# Relatório (LaTeX, modelo SBC) em RELATORIO.pdf na raiz. Compila dentro de build/relatorio
+# para os auxiliares não sujarem relatorio/; pdflatex roda 3 vezes (bibtex + sumário + referências).
+TEXDIR   = $(BUILD)/relatorio
+TEXENV   = TEXINPUTS=$(CURDIR)/relatorio//: BIBINPUTS=$(CURDIR)/relatorio: BSTINPUTS=$(CURDIR)/relatorio:
+PDFLATEX = $(TEXENV) pdflatex -interaction=nonstopmode -halt-on-error $(CURDIR)/relatorio/main.tex >/dev/null
+
+doc: RELATORIO.pdf
+
+RELATORIO.pdf: $(wildcard relatorio/*.tex relatorio/*.sty relatorio/*.bst relatorio/*.bib relatorio/secoes/*.tex)
+	@mkdir -p $(TEXDIR)
+	@cd $(TEXDIR) && { $(PDFLATEX) && $(TEXENV) bibtex -terse main && $(PDFLATEX) && $(PDFLATEX); } \
+		|| { echo "erro no LaTeX: veja $(TEXDIR)/main.log"; exit 1; }
+	@cp $(TEXDIR)/main.pdf $@
+	@echo "gerado: $@"
+
 # Gera o C, compila com gcc -Wall -Werror e executa: make run P=tests/valido/03_funcao_juros.txt
 run: all
 	./$(TARGET) < $(P) > $(BUILD)/programa.c
@@ -52,4 +67,4 @@ conflitos: $(BUILD)/y.tab.c
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: all run test test-tabelas test-tipos conflitos clean
+.PHONY: all run test test-tabelas test-tipos conflitos clean doc
