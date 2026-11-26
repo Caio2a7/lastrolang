@@ -1,0 +1,4 @@
+proc main() {
+    int preço := 10;
+}
+// erro: linha 2: caractere inválido

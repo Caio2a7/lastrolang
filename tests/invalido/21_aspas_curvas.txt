@@ -1,0 +1,4 @@
+proc main() {
+    escrever(“saldo”);
+}
+// erro: linha 2: caractere inválido

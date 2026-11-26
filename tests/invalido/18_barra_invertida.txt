@@ -1,0 +1,4 @@
+proc main() {
+    int x := 4 \ 2;
+}
+// erro: linha 2: caractere inválido
