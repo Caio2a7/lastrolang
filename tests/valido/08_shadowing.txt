@@ -1,0 +1,79 @@
+// Shadowing em escopos aninhados (critério 2D, issue #49) e nomes repetidos em escopos irmãos (2C).
+// Num escopo de dentro, o nome esconde o de fora até o bloco fechar.
+// Saída esperada (uma por linha): 2 1 11 10 3 100 10 99 true 7 9 6 7 8 6 5 6 7 1 20 10
+const int N := 10;
+
+proc irmao_a() {
+    int y := 5;
+    escrever(y);
+}
+
+proc irmao_b() {
+    int y := 6;
+    escrever(y);
+}
+
+// parâmetro com o nome da constante global: dentro de f, N é o parâmetro
+proc f(int N) {
+    escrever(N);
+}
+
+proc main() {
+    int x := 1;
+    if (true) {
+        int x := 2;
+        escrever(x);
+    }
+    escrever(x);
+
+    // a variável local N esconde a constante; o N da direita ainda é a constante
+    if (true) {
+        int N := N + 1;
+        escrever(N);
+    }
+    escrever(N);
+
+    f(3);
+    f(100);
+    escrever(N);
+
+    // dois níveis de aninhamento; a atribuição muda só o z mais interno visível
+    int z := 9;
+    int k := 0;
+    while (k < 1) {
+        int z := 99;
+        escrever(z);
+        if (true) {
+            bool z := true;
+            escrever(z);
+        }
+        z := 7;
+        escrever(z);
+        k := k + 1;
+    }
+    escrever(z);
+
+    // o contador esconde o i de fora; o início do for ainda lê o i de fora
+    int i := 6;
+    for (int i := i to 8) {
+        escrever(i);
+    }
+    escrever(i);
+
+    irmao_a();
+    irmao_b();
+
+    // [e; n] no escopo de dentro: o v[0] da direita é o v de fora
+    int[3] v := [7; 3];
+    if (true) {
+        int[3] v := [v[0]; 3];
+        escrever(v[2]);
+    }
+
+    escrever(x);
+    if (true) {
+        int x := x * 20;
+        escrever(x);
+    }
+    escrever(N);
+}

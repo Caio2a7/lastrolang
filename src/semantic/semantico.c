@@ -317,7 +317,8 @@ int erros_semanticos(void) {
 }
 
 int nome_livre(const char *nome, int linha) {
-    Symbol *sym = find_name(nome);  /* escopo atual e todos os envolventes */
+    /* Só o escopo do topo: num escopo de dentro o nome esconde o de fora (shadowing, critério 2D) */
+    Symbol *sym = table_lookup(scope_level(scope_depth())->name, nome);
     if (sym) {
         erro_semantico(linha, "'%s' já declarado no escopo '%s'", nome, sym->scope);
         return 0;

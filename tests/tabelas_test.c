@@ -79,16 +79,20 @@ int main(void) {
     assert(declare_var("y", C_VAR, &type_int, 0, 5) != NULL);
     scope_pop();
 
-    /* nome_livre: cada caso reporta um erro e devolve 0 */
+    /* nome_livre: cada caso proibido reporta um erro e devolve 0 */
     int erros = erros_semanticos();
     assert(declare_var("x", C_VAR, &type_int, 0, 6) == NULL);         /* mesmo escopo */
-    scope_push_block(0);
-    assert(declare_var("x", C_VAR, &type_int, 0, 7) == NULL);         /* shadowing */
-    scope_pop();
     assert(declare_var("f", C_VAR, &type_int, 0, 8) == NULL);         /* nome de subprograma */
     assert(declare_var("Conta", C_VAR, &type_int, 0, 9) == NULL);     /* nome de tipo */
     assert(declare_var("livre", C_VAR, &type_int, 0, 10) != NULL);
-    assert(erros_semanticos() == erros + 4);
+    assert(erros_semanticos() == erros + 3);
+
+    /* Shadowing (#49): o x de dentro esconde o de fora até o bloco fechar */
+    scope_push_block(0);
+    Symbol *x_dentro = declare_var("x", C_VAR, &type_bool, 0, 7);
+    assert(x_dentro && x_dentro != x && find_name("x") == x_dentro);
+    scope_pop();
+    assert(find_name("x") == x && erros_semanticos() == erros + 3);
 
     scope_pop();
     scope_pop();

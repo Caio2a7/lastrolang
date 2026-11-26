@@ -83,7 +83,8 @@ O C gerado não usa `while`, `for` nem `else`: todo controle de fluxo vira `if (
 
 | Lastro | C gerado |
 |---|---|
-| `const int MAX := 1000;` | `#define MAX 1000` |
+| `const int MAX := 1000;` | `static const int MAX = 1000;` (não `#define`, para uma variável local poder esconder o nome) |
+| nome repetido num escopo de dentro (shadowing) | o mesmo nome no bloco C correspondente; o inicializador passa antes por um temporário `_tN` |
 | `bool`, `true`, `false` | `int`, `1`, `0` |
 | `float` | `double`; a coerção de `int` aparece como `((double)x)` |
 | `:=` / `=` | `=` / `==`, com parênteses em toda operação |

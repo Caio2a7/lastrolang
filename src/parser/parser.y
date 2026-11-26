@@ -67,7 +67,9 @@ decl_const
             verifica_atribuicao($2, $5.tipo, $5.linha, "constante");
             Symbol *s = declare_var($3, C_CONST, $2, 0, yylineno);
             if (s) s->value = strtol($5.cod, NULL, 10);  /* usado em int[MAX] */
-            $$ = cod_fmt("#define %s %s\n", $3, coage($5, $2).cod);  /* constante de compilação, serve de tamanho */
+            /* static const e não #define: o #define trocaria também uma variável local de mesmo nome
+             * (shadowing). Tamanhos de array saem como número no C, então não dependem do nome. */
+            $$ = cod_fmt("static const %s %s = %s;\n", c_tipo($2), $3, coage($5, $2).cod);
         }
     ;
 
@@ -221,8 +223,9 @@ cmd
 decl_var
     : tipo ID ASSIGN expr SEMI  {
             verifica_atribuicao($1, $4.tipo, $4.linha, "inicialização");
+            int sombra = find_name($2) != NULL;  /* esconde um nome de fora: o C precisa de temporário */
             declare_var($2, C_VAR, $1, 0, yylineno);
-            $$ = gen_decl($1, $2, coage($4, $1));
+            $$ = gen_decl($1, $2, coage($4, $1), sombra);
         }
     | tipo ID ASSIGN LBRACKET expr SEMI tamanho RBRACKET SEMI {
             declare_var($2, C_VAR, $1, 0, yylineno);

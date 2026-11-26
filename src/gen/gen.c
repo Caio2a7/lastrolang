@@ -12,6 +12,7 @@ const char *gen_prologo =
     "#pragma GCC diagnostic ignored \"-Wunused-variable\"\n"
     "#pragma GCC diagnostic ignored \"-Wunused-but-set-variable\"\n"
     "#pragma GCC diagnostic ignored \"-Wunused-label\"\n"
+    "#pragma GCC diagnostic ignored \"-Wunused-const-variable\"\n"
     "\n"
     "/* Embutidos: um por tipo, porque C não tem sobrecarga. float é double no C. */\n"
     "static inline void ler_int(int *x) { if (scanf(\"%d\", x) != 1) exit(1); }\n"
@@ -100,7 +101,13 @@ static char *nega(Atr c) {
     return cod_fmt(c.cod[0] == '(' ? "!%s" : "!(%s)", c.cod);
 }
 
-char *gen_decl(const TypeDesc *t, const char *nome, Atr e) {
+char *gen_decl(const TypeDesc *t, const char *nome, Atr e, int sombra) {
+    if (sombra) {
+        /* "int x := x + 1" num escopo de dentro: em Lastro o x da direita é o de fora, mas em C
+         * o x novo já vale no próprio inicializador. O valor passa antes por um temporário. */
+        char *tmp = cod_fmt("_t%d", novo());
+        return cod_fmt("%s%s", gen_decl(t, tmp, e, 0), gen_decl(t, nome, atr(tmp, e.tipo, e.linha), 0));
+    }
     if (t->kind == K_ARRAY) {  /* C não atribui array */
         return cod_fmt("%s;\nmemcpy(%s, %s, sizeof %s);\n", c_decl(t, nome), nome, e.cod, nome);
     }
@@ -113,9 +120,10 @@ char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int linha) {
         return "";
     }
     int valor = novo(), i = novo(), teste = novo(), fim = novo();
-    /* o valor é calculado uma vez, antes do laço */
-    return cod_fmt("%s;\n"
-                   "%s = %s;\n"
+    /* o valor é calculado uma vez, antes do laço e antes de declarar o array:
+     * em "int[3] v := [v[0]; 3]" num escopo de dentro, o v[0] é o v de fora */
+    return cod_fmt("%s = %s;\n"
+                   "%s;\n"
                    "int _t%d = 0;\n"
                    "_L%d: ;\n"
                    "if (_t%d >= %d) goto _L%d;\n"
@@ -123,8 +131,8 @@ char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int linha) {
                    "_t%d = _t%d + 1;\n"
                    "goto _L%d;\n"
                    "_L%d: ;\n",
-                   c_decl(t, nome),
                    c_decl(t->elem, cod_fmt("_t%d", valor)), e.cod,
+                   c_decl(t, nome),
                    i,
                    teste,
                    i, t->size, fim,
@@ -158,10 +166,13 @@ char *gen_while(Laco l, Atr c, const char *corpo) {
 }
 
 char *gen_for(Laco l, const char *var, Atr ini, Atr fim, const char *corpo) {
-    int lim = novo(), teste = novo();
-    /* bloco próprio: dois for seguidos podem declarar o mesmo contador */
-    return gen_bloco(cod_fmt("int %s = %s;\n"
+    int ini_t = novo(), lim = novo(), teste = novo();
+    /* bloco próprio: dois for seguidos podem declarar o mesmo contador.
+     * Início e limite vão para temporários antes de declarar o contador: em
+     * "for (int i := i to n)" num escopo de dentro, o i da direita é o de fora. */
+    return gen_bloco(cod_fmt("int _t%d = %s;\n"
                              "int _t%d = %s;\n"
+                             "int %s = _t%d;\n"
                              "_L%d: ;\n"
                              "if (%s > _t%d) goto _L%d;\n"
                              "%s"
@@ -169,8 +180,9 @@ char *gen_for(Laco l, const char *var, Atr ini, Atr fim, const char *corpo) {
                              "%s = %s + 1;\n"
                              "goto _L%d;\n"
                              "_L%d: ;\n",
-                             var, ini.cod,
+                             ini_t, ini.cod,
                              lim, fim.cod,
+                             var, ini_t,
                              teste,
                              var, lim, l.brk,
                              corpo,
