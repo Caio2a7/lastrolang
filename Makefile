@@ -81,9 +81,7 @@ $(BUILD)/dangling_else: tests/conflitos/dangling_else.y | $(BUILD)
 test-conflitos: all $(BUILD)/dangling_else
 	@sh tests/conflitos/testa.sh
 
-.PHONY: test-conflitos
-
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: all run test test-tabelas test-tipos conflitos clean doc
+.PHONY: all run test test-tabelas test-tipos conflitos test-conflitos clean doc
