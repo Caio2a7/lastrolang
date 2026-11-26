@@ -46,8 +46,22 @@ test-tipos: | $(BUILD)
 
 # Mostra o resumo de conflitos do y.output (gerado pelo -v do yacc),
 # útil para conferir contra as tabelas LR(0)/SLR/LR(1)/LALR(1) feitas à mão.
-conflitos: $(BUILD)/y.tab.c
+conflitos: $(BUILD)/y.tab.c $(BUILD)/dangling_else
+	@echo "== Gramática do compilador ($(BUILD)/y.output) =="
 	@grep -i "conflict" $(BUILD)/y.output || echo "Nenhum conflito reportado."
+	@echo "== Variante didática com if sem chaves ($(BUILD)/dangling_else.output) =="
+	@grep -i "conflict" $(BUILD)/dangling_else.output
+
+# Variante da gramática com o dangling else (issue #24): 1 conflito S/R, resolvido por shift.
+$(BUILD)/dangling_else: tests/conflitos/dangling_else.y | $(BUILD)
+	$(YACC) -Wno-conflicts-sr -o $(BUILD)/dangling_else.tab.c $<
+	$(CC) -Wall -o $@ $(BUILD)/dangling_else.tab.c
+
+# Associatividade, precedência, if aninhado e ID seguido de ( ou [ (issue #24).
+test-conflitos: all $(BUILD)/dangling_else
+	@sh tests/conflitos/testa.sh
+
+.PHONY: test-conflitos
 
 clean:
 	rm -rf $(BUILD)

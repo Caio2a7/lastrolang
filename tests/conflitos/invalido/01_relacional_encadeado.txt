@@ -1,0 +1,6 @@
+// erro: linha 5: syntax error perto de '<'
+// rel é "soma op_rel soma": depois de um relacional só cabe soma, então
+// a < b < c não tem árvore. Encadear exige parênteses: (1 < 2) = true.
+proc main() {
+    bool b := 1 < 2 < 3;
+}

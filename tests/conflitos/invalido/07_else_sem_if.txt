@@ -1,0 +1,7 @@
+// erro: linha 4: syntax error perto de 'else'
+// else não começa comando: sem o if antes, ele fica sem dono.
+proc main() {
+    else {
+        escrever(2);
+    }
+}

@@ -1,0 +1,7 @@
+// erro: linha 6: syntax error perto de '='
+// a = b = c também é relacional encadeado (o '=' de Lastro é igualdade).
+proc main() {
+    int a := 1;
+    int c := 1;
+    bool b := a = 1 = c;
+}

@@ -1,0 +1,7 @@
+// erro: linha 6: erro semântico
+// '+' liga mais forte que '<', então a + b < c && d vira ((a + b) < c) && d.
+// Se o parser agrupasse a + (b < c), o erro seria de soma com bool; aqui o
+// erro é o && entre bool e int, o que mostra a árvore que o parser montou.
+proc main() {
+    bool r := 1 + 2 < 4 && 5;
+}

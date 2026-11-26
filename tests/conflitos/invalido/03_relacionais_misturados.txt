@@ -1,0 +1,5 @@
+// erro: linha 4: syntax error perto de '='
+// mesmo com operadores diferentes, só um relacional por nível.
+proc main() {
+    bool b := 1 < 2 = true;
+}

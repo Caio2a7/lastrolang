@@ -1,0 +1,12 @@
+// a - b - c: depois de "soma MINUS termo" com MINUS à frente, o parser reduz antes de
+// empilhar o segundo '-', então os operadores associam à esquerda.
+// A associação à direita daria os valores entre parênteses.
+proc main() {
+    escrever(10 - 3 - 2);        // saida: 5
+    escrever(100 - 10 - 5 - 1);  // saida: 84
+    escrever(10 - 3 + 2);        // saida: 9
+    escrever(100 / 10 / 5);      // saida: 2
+    escrever(7 / 2 * 2);         // saida: 6
+    escrever(2 * 6 / 4);         // saida: 3
+    escrever(10 - (3 - 2));      // saida: 9
+}

@@ -1,0 +1,27 @@
+// ID seguido de '(' ou '[': no estado "alvo: ID ." o parser olha um token à frente.
+// '(' empilha e vira chamada, '[' empilha e vira indexação, qualquer outro token
+// reduz ID a alvo (variável simples). Depois de 'ref' só cabe alvo, então o '(' nem
+// é aceito ali.
+func dobro(int x) -> int {
+    return 2 * x;
+}
+
+proc incrementa(ref int x) {
+    x := x + 1;
+}
+
+proc main() {
+    int[3] v := [7; 3];
+    int i := 1;
+    v[i] := dobro(i);
+    escrever(v[i]);              // saida: 2
+    escrever(v[dobro(1) - 2]);   // saida: 7
+    escrever(dobro(v[i]));       // saida: 4
+    escrever(i);                 // saida: 1
+    i := dobro(dobro(i)) + v[i] * 2;
+    escrever(i);                 // saida: 8
+    incrementa(ref v[0]);
+    escrever(v[0]);              // saida: 8
+    incrementa(ref i);
+    escrever(i);                 // saida: 9
+}

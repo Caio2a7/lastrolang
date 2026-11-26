@@ -1,0 +1,11 @@
+// erro: linha 8: syntax error perto de 'else'
+// cada if tem no máximo um else.
+proc main() {
+    if (true) {
+        escrever(1);
+    } else {
+        escrever(2);
+    } else {
+        escrever(3);
+    }
+}

@@ -1,0 +1,20 @@
+// a + b * c: depois de "soma PLUS termo" com STAR à frente, o parser empilha o '*'
+// (o termo ainda pode crescer), então '*' e '/' ligam mais forte que '+' e '-'.
+// Os níveis são, do mais fraco ao mais forte: || && relacionais + - * / unários.
+proc main() {
+    escrever(2 + 3 * 4);         // saida: 14
+    escrever(2 * 3 + 4);         // saida: 10
+    escrever((2 + 3) * 4);       // saida: 20
+    escrever(10 - 6 / 2);        // saida: 7
+    escrever(-2 + 3);            // saida: 1
+    escrever(10 - -3);           // saida: 13
+    escrever(- -5);              // saida: 5
+    escrever(-(2 + 3) * 2);      // saida: -10
+    escrever(1 + 2 < 2 * 2);     // saida: true
+    escrever(true || false && false);  // saida: true
+    escrever(false && true || true);   // saida: true
+    escrever(!false && false);   // saida: false
+    escrever(!(false && false)); // saida: true
+    escrever(1 < 2 && 3 > 4 || 5 = 5); // saida: true
+    escrever((1 < 2) = true);    // saida: true
+}
