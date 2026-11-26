@@ -35,7 +35,7 @@ test: all
 		saida=$$(./$(TARGET) < $$f 2>&1 >/dev/null); st=$$?; \
 		if [ $$st -eq 1 ] && printf '%s\n' "$$saida" | grep -qF "$$esperado"; then echo "OK      $$f"; \
 		else echo "FALHOU  $$f (esperado '$$esperado')"; printf '%s\n' "$$saida" | sed 's/^/        /'; falhas=$$((falhas+1)); fi; \
-	done; echo "$$falhas falha(s)"; echo
+	done; echo "$$falhas falha(s)"; echo; [ $$falhas -eq 0 ]
 	@echo "== Casos semânticos inválidos (devem dar erro) =="
 	@for f in tests/semantic/invalido/*.txt; do echo "-- $$f --"; ./$(TARGET) < $$f; echo; done
 
