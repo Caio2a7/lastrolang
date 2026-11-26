@@ -1,0 +1,7 @@
+proc main() {
+    if (true) {
+    } else {
+    } else {
+    }
+}
+// erro: linha 4: syntax error

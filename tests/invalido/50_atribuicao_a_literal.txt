@@ -1,0 +1,4 @@
+proc main() {
+    1 := 2;
+}
+// erro: linha 2: syntax error

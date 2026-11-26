@@ -1,0 +1,5 @@
+proc main() {
+    int[3] v := [0; 3];
+    v[] := 2;
+}
+// erro: linha 3: syntax error

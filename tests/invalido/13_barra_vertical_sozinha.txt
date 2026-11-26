@@ -1,0 +1,4 @@
+proc main() {
+    bool b := true | false;
+}
+// erro: linha 2: caractere inválido

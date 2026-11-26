@@ -1,0 +1,5 @@
+proc main() {
+    int x := 1;
+    int y := ref x;
+}
+// erro: linha 3: syntax error

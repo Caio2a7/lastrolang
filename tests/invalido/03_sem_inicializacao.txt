@@ -1,3 +1,4 @@
 proc main() {
     int total;
 }
+// erro: linha 2: syntax error

@@ -1,0 +1,4 @@
+proc main() {
+    int while := 1;
+}
+// erro: linha 2: syntax error

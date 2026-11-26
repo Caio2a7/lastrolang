@@ -44,8 +44,13 @@ run: all
 test: all
 	@echo "== Casos válidos (C gerado tem de compilar com gcc -Wall -Werror) =="
 	@for f in tests/valido/*.txt; do echo "-- $$f --"; ./$(TARGET) < $$f > $(BUILD)/teste.c && $(CC) -Wall -Werror -o $(BUILD)/teste $(BUILD)/teste.c && echo "gcc: OK"; echo; done
-	@echo "== Casos inválidos (devem dar erro) =="
-	@for f in tests/invalido/*.txt; do echo "-- $$f --"; ./$(TARGET) < $$f; echo; done
+	@echo "== Casos inválidos (REJEITADO com o erro do comentário '// erro: linha N: ...') =="
+	@falhas=0; for f in tests/invalido/*.txt; do \
+		esperado=$$(sed -n 's|^// erro: ||p' $$f); \
+		saida=$$(./$(TARGET) < $$f 2>&1 >/dev/null); st=$$?; \
+		if [ $$st -eq 1 ] && printf '%s\n' "$$saida" | grep -qF "$$esperado"; then echo "OK      $$f"; \
+		else echo "FALHOU  $$f (esperado '$$esperado')"; printf '%s\n' "$$saida" | sed 's/^/        /'; falhas=$$((falhas+1)); fi; \
+	done; echo "$$falhas falha(s)"; echo; [ $$falhas -eq 0 ]
 	@echo "== Casos semânticos inválidos (devem dar erro) =="
 	@for f in tests/semantic/invalido/*.txt; do echo "-- $$f --"; ./$(TARGET) < $$f; echo; done
 

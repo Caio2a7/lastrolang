@@ -1,0 +1,5 @@
+proc main() {
+    proc ajuda() {
+    }
+}
+// erro: linha 2: syntax error

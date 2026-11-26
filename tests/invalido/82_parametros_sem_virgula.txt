@@ -1,0 +1,5 @@
+proc f(int a int b) {
+}
+proc main() {
+}
+// erro: linha 1: syntax error

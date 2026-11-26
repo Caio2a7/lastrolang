@@ -1,0 +1,7 @@
+func dobro(int x) -> int {
+    return x * 2
+}
+proc main() {
+    escrever(dobro(1));
+}
+// erro: linha 3: syntax error

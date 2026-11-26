@@ -1,0 +1,6 @@
+proc main() {
+    int i := 0;
+    for (i := 1 to 10) {
+    }
+}
+// erro: linha 3: syntax error

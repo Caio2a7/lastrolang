@@ -1,0 +1,4 @@
+proc main() {
+    /* comentário de bloco */
+}
+// erro: linha 2: syntax error
