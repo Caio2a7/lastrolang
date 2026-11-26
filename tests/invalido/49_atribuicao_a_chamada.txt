@@ -1,0 +1,7 @@
+func um() -> int {
+    return 1;
+}
+proc main() {
+    um() := 2;
+}
+// erro: linha 5: syntax error

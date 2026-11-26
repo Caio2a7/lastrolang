@@ -62,8 +62,8 @@ const char *c_tipo(const TypeDesc *t) {
 }
 
 char *c_decl(const TypeDesc *t, const char *nome) {
-    if (t->kind == K_ARRAY) {
-        return cod_fmt("%s %s[%d]", c_tipo(t->elem), nome, t->size);
+    if (t->kind == K_ARRAY) {  /* int[2][3] m vira "int m[2][3]": o tamanho de fora vem primeiro */
+        return c_decl(t->elem, cod_fmt("%s[%d]", nome, t->size));
     }
     return cod_fmt("%s %s", c_tipo(t), nome);
 }
@@ -112,32 +112,38 @@ char *gen_decl(const TypeDesc *t, const char *nome, Atr e, int sombra) {
     return cod_fmt("%s = %s;\n", c_decl(t, nome), e.cod);
 }
 
-char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int linha) {
-    if (t->kind != K_ARRAY) {
-        erro_semantico(linha, "'%s' não é array; [e; n] só inicializa array", nome);
-        return "";
+/* Laços aninhados que copiam valor (do tipo do elemento) em cada alvo[i1]...[ik]. */
+static char *preenche(const TypeDesc *t, const char *alvo, Atr valor, int k) {
+    if (k == 0) {
+        return gen_atrib(atr((char *)alvo, (TypeDesc *)t, valor.linha), valor);
     }
-    int valor = novo(), i = novo(), teste = novo(), fim = novo();
-    /* o valor é calculado uma vez, antes do laço e antes de declarar o array:
-     * em "int[3] v := [v[0]; 3]" num escopo de dentro, o v[0] é o v de fora */
-    return cod_fmt("%s = %s;\n"
-                   "%s;\n"
-                   "int _t%d = 0;\n"
+    int i = novo(), teste = novo(), fim = novo();
+    return cod_fmt("int _t%d = 0;\n"
                    "_L%d: ;\n"
                    "if (_t%d >= %d) goto _L%d;\n"
-                   "%s[_t%d] = _t%d;\n"
+                   "%s"
                    "_t%d = _t%d + 1;\n"
                    "goto _L%d;\n"
                    "_L%d: ;\n",
-                   c_decl(t->elem, cod_fmt("_t%d", valor)), e.cod,
-                   c_decl(t, nome),
                    i,
                    teste,
                    i, t->size, fim,
-                   nome, i, valor,
+                   preenche(t->elem, cod_fmt("%s[_t%d]", alvo, i), valor, k - 1),
                    i, i,
                    teste,
                    fim);
+}
+
+char *gen_decl_preenche(const TypeDesc *t, const char *nome, Atr e, int k) {
+    const TypeDesc *elem = t;
+    for (int d = 0; d < k; d++) elem = elem->elem;
+    char *valor = cod_fmt("_t%d", novo());
+    /* o valor é calculado uma vez, antes do laço e antes de declarar o array:
+     * em "int[3] v := [v[0]; 3]" num escopo de dentro, o v[0] é o v de fora */
+    return cod_fmt("%s%s;\n%s",
+                   gen_decl(elem, valor, coage(e, elem), 0),
+                   c_decl(t, nome),
+                   preenche(t, nome, atr(valor, (TypeDesc *)elem, e.linha), k));
 }
 
 char *gen_decl_registro(TypeDesc *t, const char *nome, const Arg *valores, int linha) {
@@ -184,8 +190,7 @@ char *gen_decl_registro(TypeDesc *t, const char *nome, const Arg *valores, int l
 
 char *gen_atrib(Atr alvo, Atr e) {
     if (alvo.tipo->kind == K_ARRAY) {  /* tamanho pelo tipo: alvo pode ser parâmetro ref (ponteiro) */
-        return cod_fmt("memcpy(%s, %s, sizeof(%s) * %d);\n",
-                       alvo.cod, e.cod, c_tipo(alvo.tipo->elem), alvo.tipo->size);
+        return cod_fmt("memcpy(%s, %s, sizeof(%s));\n", alvo.cod, e.cod, c_decl(alvo.tipo, ""));
     }
     return cod_fmt("%s = %s;\n", alvo.cod, e.cod);
 }

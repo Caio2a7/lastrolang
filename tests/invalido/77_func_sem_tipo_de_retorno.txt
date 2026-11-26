@@ -1,0 +1,6 @@
+func dobro(int x) {
+    return x * 2;
+}
+proc main() {
+}
+// erro: linha 1: syntax error

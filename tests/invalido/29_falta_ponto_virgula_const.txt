@@ -1,0 +1,4 @@
+const int MAX := 10
+proc main() {
+}
+// erro: linha 2: syntax error

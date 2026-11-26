@@ -1,0 +1,6 @@
+proc main() {
+    while (true) {
+        break
+    }
+}
+// erro: linha 4: syntax error

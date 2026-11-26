@@ -1,0 +1,4 @@
+proc main() {
+    float x := .5;
+}
+// erro: linha 2: syntax error

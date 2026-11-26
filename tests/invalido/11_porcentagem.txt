@@ -1,0 +1,4 @@
+proc main() {
+    int resto := 10 % 3;
+}
+// erro: linha 2: caractere inválido

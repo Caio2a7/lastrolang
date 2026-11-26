@@ -40,6 +40,13 @@ TypeDesc *type_array(TypeDesc *elem, int size) {
     return hm_copy(&(TypeDesc){ .kind = K_ARRAY, .elem = elem, .size = size }, sizeof(TypeDesc));
 }
 
+TypeDesc *type_add_dim(TypeDesc *t, int size) {
+    if (t->kind != K_ARRAY) {
+        return type_array(t, size);
+    }
+    return type_array(type_add_dim(t->elem, size), t->size);
+}
+
 int type_equal(const TypeDesc *a, const TypeDesc *b) {
     if (a == b) {
         return 1;
@@ -57,11 +64,13 @@ char *type_str(const TypeDesc *t) {
         return strdup(t->name);
     }
 
+    /* a dimensão de fora vem antes das do elemento: int[2] de int[3] é "int[2][3]" */
     char *elem = type_str(t->elem);
     size_t len = strlen(elem) + 16;
     char *str = malloc(len);
+    int base = (int)strcspn(elem, "[");
 
-    snprintf(str, len, "%s[%d]", elem, t->size);
+    snprintf(str, len, "%.*s[%d]%s", base, elem, t->size, elem + base);
     free(elem);
 
     return str;

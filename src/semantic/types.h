@@ -56,6 +56,12 @@ TypeDesc *type_lookup(const char *name);
 TypeDesc *type_array(TypeDesc *elem, int size);
 
 /**
+ * @brief Acrescenta uma dimensão à direita: int[N] vira int[N][size].
+ *        Matriz é array de array, então a nova dimensão envolve o elemento mais interno.
+ */
+TypeDesc *type_add_dim(TypeDesc *t, int size);
+
+/**
  * @brief Compara dois tipos: primitivos e registros pela identidade do descritor,
  *        arrays pela estrutura (mesmo tamanho e mesmo tipo de elemento).
  * @return 1 se forem iguais, 0 caso contrário. Coerções e o tipo erro ficam
@@ -64,7 +70,7 @@ TypeDesc *type_array(TypeDesc *elem, int size);
 int type_equal(const TypeDesc *a, const TypeDesc *b);
 
 /**
- * @brief Texto do tipo, como "int", "int[10]" ou "Conta".
+ * @brief Texto do tipo, como "int", "int[10]", "int[2][3]" ou "Conta".
  * @return String nova (deve ser liberada pelo chamador).
  */
 char *type_str(const TypeDesc *t);

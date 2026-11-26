@@ -152,6 +152,36 @@ Atr verifica_indexacao(Atr base, Atr idx, int linha) {
     return res;
 }
 
+static int n_dims(const TypeDesc *t) {
+    int n = 0;
+    for (; t->kind == K_ARRAY; t = t->elem) n++;
+    return n;
+}
+
+int verifica_preenche(const char *nome, const TypeDesc *t, const TypeDesc *forma, Atr e, int linha) {
+    if (t->kind != K_ARRAY) {
+        erro_semantico(linha, "'%s' não é array; [e; n] só inicializa array", nome);
+        return 0;
+    }
+    int k = n_dims(forma), dims = n_dims(t);
+    if (k > dims) {
+        erro_semantico(linha, "'%s' tem %d dimensão(ões), mas o inicializador tem %d", nome, dims, k);
+        return 0;
+    }
+    for (int d = 1; d <= k; d++, t = t->elem, forma = forma->elem) {
+        /* tamanho 0 = tamanho inválido, erro já reportado */
+        if (t->size > 0 && forma->size > 0 && t->size != forma->size) {
+            if (dims == 1)
+                erro_semantico(linha, "'%s' tem %d elementos, mas o inicializador tem %d", nome, t->size, forma->size);
+            else
+                erro_semantico(linha, "dimensão %d de '%s' tem %d elementos, mas o inicializador tem %d",
+                               d, nome, t->size, forma->size);
+        }
+    }
+    verifica_atribuicao(t, e.tipo, e.linha, "inicializador de array");
+    return k;
+}
+
 Atr verifica_campo(Atr base, const char *nome, int linha) {
     if (base.tipo->kind == K_RECORD) {
         for (const Field *campo = base.tipo->fields; campo; campo = campo->next) {

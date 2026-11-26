@@ -1,0 +1,5 @@
+proc if() {
+}
+proc main() {
+}
+// erro: linha 1: syntax error

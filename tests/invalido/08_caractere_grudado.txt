@@ -1,0 +1,5 @@
+proc main() {
+    int valor := 1;
+    int total := valor@2;
+}
+// erro: linha 3: caractere inválido
