@@ -1,3 +1,4 @@
 proc main() {
     escrever("sem fechar);
 }
+// erro: linha 2: texto sem aspas de fechamento
