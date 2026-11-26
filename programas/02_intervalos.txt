@@ -9,6 +9,8 @@ proc main() {
     int faixa_51_75 := 0;
     int faixa_76_100 := 0;
 
+    escrever("Digite uma sequência de números para que haja a contagem a partir do seu intervalo:");
+
     ler(ref num);
     while (num >= 0) {
         if (num <= 25) {

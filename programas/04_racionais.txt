@@ -66,10 +66,24 @@ proc main() {
 
     escrever("Operandos");
     escrever("O numerador fica acima da barra e o denominador abaixo.");
+    
+    escrever("");
+    escrever("");
+    
     escrever("a");
+    escrever("");
     escreve_racional(a);
+    
+    escrever("");
+    escrever("");
+    
     escrever("b");
+    escrever("");
     escreve_racional(b);
+    
+    escrever("");
+    escrever("");
+    
     escrever("e (a com numerador e denominador dobrados)");
     escreve_racional(equivalente);
 
