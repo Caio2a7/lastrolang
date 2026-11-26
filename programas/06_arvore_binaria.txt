@@ -1,0 +1,165 @@
+// Uma árvore binária de busca generaliza a ideia de listas encadeadas crescentes.
+// Em uma árvore binária de busca, os nós têm um campo chave de um tipo
+// ordenável e apresentam as seguintes propriedades: para qualquer nó n, a chave
+// de n é maior ou igual à chave de qualquer nó na subárvore esquerda de n e
+// menor ou igual à chave de qualquer nó na subárvore direita de n. Implemente
+// uma árvore binária de busca com chaves de tipo inteiro e as seguintes operações:
+// A) Transforme uma sequência de valores em uma árvore binária de busca.
+// B) Encontre a chave mínima da árvore, indicando seu nível.
+// C) Encontre a chave máxima da árvore, indicando seu nível.
+// D) Imprima a árvore de busca na saída padrão, nível a nível.
+
+
+type Node {
+    int value;
+    ^Node left;
+    ^Node right;
+};
+
+// Inserção
+proc insere(ref ^Node root, int value) {
+    if (root = nulo) {
+        root := novo Node;
+        root.value := value;
+    } else if (value < root.value) {
+        insere(ref root.left, value);
+    } else {
+        insere(ref root.right, value);
+    }
+}
+
+// Mínimo
+proc min(^Node root, ref int value, ref int depth) {
+    ^Node t := root;
+    depth := 0;
+
+    while (t.left != nulo) { // Anda para a esquerda até o próximo Node da esquerda for NULL
+        t := t.left;
+        depth := depth + 1;
+    }
+    value := t.value;
+}
+
+// Máximo
+proc max(^Node root, ref int value, ref int depth) {
+    ^Node t := root;
+    depth := 0;
+
+    while (t.right != nulo) { // Anda para a direita até o próximo Node da direita for NULL
+        t := t.right;
+        depth := depth + 1;
+    }
+    value := t.value;
+}
+
+func depth(^Node node) -> int {
+    if (node = nulo) {
+        return -1;
+    }
+    int lef := depth(node.left);
+    int rig := depth(node.right);
+
+    if (lef > rig) {
+        return lef + 1;
+    }
+
+    return rig + 1;
+}
+
+proc print_level(^Node node, int k) {
+    if (node = nulo) {
+        return;
+    }
+
+    if (k = 0) {
+        escrever(node.value);
+        return;
+    }
+
+    print_level(node.left, k - 1);
+    print_level(node.right, k - 1);
+}
+
+// Quantidade de chaves na árvore.
+func count(^Node node) -> int {
+    if (node = nulo) {
+        return 0;
+    }
+    return 1 + count(node.left) + count(node.right);
+}
+
+// Impressão da árvore: um bloco por nível, da raiz até o mais fundo.
+proc print_btree(^Node root) {
+    int last := depth(root);
+    for (int k := 0 to last) {
+        escrever("Nível:");
+        escrever(k);
+        escrever("Chaves:");
+        print_level(root, k);
+        if (k < last) {
+            escrever("- - - - - - - - - - - - - - - - -");
+        }
+    }
+}
+
+proc main() {
+    ^Node root := nulo;
+
+    escrever("==================================");
+    escrever("      ÁRVORE BINÁRIA DE BUSCA");
+    escrever("==================================");
+    escrever("Digite as chaves, uma por linha.");
+    escrever("Use -1 para encerrar a leitura.");
+
+    int value := 0;
+    ler(ref value);
+    while (value != -1) {
+        insere(ref root, value);
+        ler(ref value);
+    }
+
+    if (root = nulo) {
+        escrever("");
+        escrever("A árvore está vazia: não há mínimo, máximo nem níveis.");
+        return;
+    }
+
+    int key := 0;
+    int level := 0;
+
+    escrever("");
+    escrever("----------------------------------");
+    escrever(" A) Árvore montada");
+    escrever("----------------------------------");
+    escrever("Quantidade de chaves:");
+    escrever(count(root));
+    escrever("Altura (nível mais fundo):");
+    escrever(depth(root));
+
+    min(root, ref key, ref level);
+    escrever("");
+    escrever("----------------------------------");
+    escrever(" B) Chave mínima");
+    escrever("----------------------------------");
+    escrever("Chave:");
+    escrever(key);
+    escrever("Nível:");
+    escrever(level);
+
+    max(root, ref key, ref level);
+    escrever("");
+    escrever("----------------------------------");
+    escrever(" C) Chave máxima");
+    escrever("----------------------------------");
+    escrever("Chave:");
+    escrever(key);
+    escrever("Nível:");
+    escrever(level);
+
+    escrever("");
+    escrever("----------------------------------");
+    escrever(" D) Árvore nível a nível");
+    escrever("----------------------------------");
+    print_btree(root);
+    escrever("==================================");
+}
