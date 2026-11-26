@@ -43,8 +43,14 @@ Atr coage(Atr e, const TypeDesc *destino);
 /* Verifica atribuição/inicialização; reporta erro em 'linha' se incompatível. */
 int verifica_atribuicao(const TypeDesc *destino, const TypeDesc *origem, int linha, const char *ctx);
 
-/* Verifica indexação de um alvo e devolve o atributo do elemento. */
+/* Verifica indexação base[idx]: exige array e índice int; devolve o atributo do elemento.
+ * Matriz é array de array, então a[i][j] é (a[i])[j]: mais índices que dimensões cai em "não é array". */
 Atr verifica_indexacao(Atr base, Atr idx, int linha);
+
+/* Verifica [e; n1, ..., nk] em 'nome' do tipo t. forma traz os k tamanhos (array de void):
+ * têm de ser as k primeiras dimensões de t, e e tem de caber no que sobra.
+ * Devolve k, ou 0 se não houver o que gerar (t não é array ou há dimensões demais). */
+int verifica_preenche(const char *nome, const TypeDesc *t, const TypeDesc *forma, Atr e, int linha);
 
 Atr verifica_campo(Atr base, const char *nome, int linha);
 

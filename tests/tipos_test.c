@@ -86,6 +86,20 @@ int main(void) {
     Atr nao_arr = verifica_indexacao(x, atr("0", &type_int, 12), 12);
     assert(nao_arr.tipo == &type_erro && erros_semanticos() == e10 + 2);
 
+    /* Matrizes (#17): int[2][3] é array de array; m[i] é int[3], m[i][j] é int */
+    TypeDesc *mat = type_add_dim(type_array(&type_int, 2), 3);
+    assert(mat->size == 2 && mat->elem->size == 3 && mat->elem->elem == &type_int);
+    Atr linha = verifica_indexacao(atr("m", mat, 13), atr("0", &type_int, 13), 13);
+    assert(type_equal(linha.tipo, type_array(&type_int, 3)));
+    assert(verifica_indexacao(linha, atr("1", &type_int, 13), 13).tipo == &type_int);
+    assert(erros_semanticos() == e10 + 2);
+    TypeDesc *forma = type_add_dim(type_array(&type_void, 2), 3);
+    assert(verifica_preenche("m", mat, forma, atr("0", &type_int, 14), 14) == 2);
+    assert(verifica_preenche("m", mat, type_array(&type_void, 2), atr("0", &type_int, 14), 14) == 1);
+    assert(erros_semanticos() == e10 + 3);  /* sobra int[3] para um int */
+    assert(verifica_preenche("m", mat, type_add_dim(type_array(&type_void, 2), 2), atr("0", &type_int, 15), 15) == 2);
+    assert(erros_semanticos() == e10 + 4);  /* 2ª dimensão: 3 != 2 */
+
     /* Chamadas e retorno (#13): aridade, tipos (int -> float), ref, proc em expr, return */
     type_init();
     scope_push("global", NULL, 0);
