@@ -40,7 +40,7 @@ static char *codigo_c = "";   /* programa C inteiro, montado na regra programa *
 %type <str> globais global decl_const subprogs subprog corpo bloco bloco_laco fecha_bloco
 %type <str> cmds cmd decl_var atrib if_stmt while_stmt for_stmt
 
-%token CONST PROC FUNC INT FLOAT BOOL IF ELSE WHILE FOR TO TYPE
+%token CONST PROC FUNC INT FLOAT BOOL IF ELSE WHILE FOR TO TYPE NULO NOVO CARET
 %token SWITCH CASE DEFAULT BREAK CONTINUE RETURN REF TRUE FALSE
 
 %token ASSIGN EQ NEQ LT LE GT GE
@@ -83,8 +83,9 @@ decl_const
     ;
 
 decl_type
-    : TYPE name LBRACE fields RBRACE SEMI {
-            TypeDesc *t = declare_type($2, $4, yylineno);
+    /* o tipo entra na tabela antes do '{': dentro dos campos o nome já é TYPE_ID */
+    : TYPE name { $<type>$ = declare_type_abre($2, yylineno); } LBRACE fields RBRACE SEMI {
+            TypeDesc *t = declare_type_fecha($<type>3, $5, yylineno);
             $$ = t ? gen_decl_type(t) : "";
         }
     ;
@@ -175,8 +176,9 @@ tipo
     ;
 
 tipo_base
-    : tipo_prim     { $$ = $1; }
-    | TYPE_ID       { $$ = type_lookup($1); }  /* tipo do usuário (#19) */
+    : tipo_prim       { $$ = $1; }
+    | TYPE_ID         { $$ = type_lookup($1); }  /* tipo do usuário (#19) */
+    | CARET tipo_base { $$ = type_ptr($2); }     /* ^No: ponteiro para No */
     ;
 
 tipo_prim
@@ -413,6 +415,12 @@ fator
     | LPAREN expr RPAREN  { $$ = $2; }  /* atr_bin já pôs os parênteses */
     | MINUS fator         { $$ = atr_un("-", $2, OP_ARITMETICO); }
     | NOT fator           { $$ = atr_un("!", $2, OP_LOGICO); }
+    | NULO         { $$ = atr(cod_fmt("NULL"), &type_nulo, yylineno); }
+    | NOVO TYPE_ID {  /* novo No: um No zerado no heap (campos 0, ponteiros nulo) */
+            TypeDesc *t = type_lookup($2);
+            const char *c = c_tipo(t);
+            $$ = atr(cod_fmt("((%s *)calloc(1, sizeof(%s)))", c, c), type_ptr(t), yylineno);
+        }
     ;
 
 literal

@@ -30,6 +30,14 @@ int compativel(TypeDesc *a, TypeDesc *b, TypeDesc **res) {
         if (res) *res = a;
         return 1;
     }
+    if ((a->kind == K_PTR || a->kind == K_NULO) && b->kind == K_NULO) {  /* nulo cabe em qualquer ^T */
+        if (res) *res = a;
+        return 1;
+    }
+    if (a->kind == K_NULO && b->kind == K_PTR) {
+        if (res) *res = b;
+        return 1;
+    }
     if ((a->kind == K_INT && b->kind == K_FLOAT) || (a->kind == K_FLOAT && b->kind == K_INT)) {
         if (res) *res = &type_float;
         return 1;
@@ -46,8 +54,9 @@ TypeDesc *tipo_resultado(Op op, TypeDesc *a, TypeDesc *b) {
         return eh_numerico(res) ? res : &type_erro;
     case OP_RELACIONAL:
         return eh_numerico(res) ? &type_bool : &type_erro;
-    case OP_IGUALDADE:
-        return (eh_numerico(res) || res->kind == K_BOOL) ? &type_bool : &type_erro;
+    case OP_IGUALDADE:  /* ponteiros só se comparam com = e != (p = nulo) */
+        return (eh_numerico(res) || res->kind == K_BOOL || res->kind == K_PTR || res->kind == K_NULO)
+               ? &type_bool : &type_erro;
     case OP_LOGICO:
         return res->kind == K_BOOL ? &type_bool : &type_erro;
     }
@@ -120,6 +129,7 @@ int tipo_atribuivel(const TypeDesc *destino, const TypeDesc *origem) {
     if (destino->kind == K_ERRO || origem->kind == K_ERRO) return 1;
     if (destino->kind == K_VOID || origem->kind == K_VOID) return 0;
     if (type_equal(destino, origem)) return 1;
+    if (destino->kind == K_PTR && origem->kind == K_NULO) return 1;
     return destino->kind == K_FLOAT && origem->kind == K_INT;
 }
 
@@ -183,6 +193,11 @@ int verifica_preenche(const char *nome, const TypeDesc *t, const TypeDesc *forma
 }
 
 Atr verifica_campo(Atr base, const char *nome, int linha) {
+    if (base.tipo->kind == K_PTR) {  /* p.campo vira (*p).campo */
+        int eh_const = base.eh_const;
+        base = atr(cod_fmt("(*%s)", base.cod), base.tipo->elem, linha);
+        base.eh_const = eh_const;
+    }
     if (base.tipo->kind == K_RECORD) {
         for (const Field *campo = base.tipo->fields; campo; campo = campo->next) {
             if (strcmp(campo->name, nome) == 0) {
@@ -441,19 +456,36 @@ void append_param(Subprog *sub, Symbol *param) {
     sub->n_params++;
 }
 
-TypeDesc *declare_type(const char *name, Field *fields, int line) {
-    if (!nome_livre(name, line)) {
-        return NULL;
-    }
+/* Registra o nome antes dos campos: dentro de { } o léxico já devolve TYPE_ID para ele,
+ * e um campo pode ser ^Nome. Os campos são pendurados depois, em declare_type_fecha. */
+TypeDesc *declare_type_abre(const char *name, int line) {
+    if (!nome_livre(name, line)) return NULL;
+    return type_insert(name, (TypeDesc){ .kind = K_RECORD });
+}
 
-    for (const Field *campo = fields; campo; campo = campo->next) {
-        for (const Field *outro = campo->next; outro; outro = outro->next) {
-            if (strcmp(campo->name, outro->name) == 0) {
-                erro_semantico(line, "campo '%s' já declarado no registro '%s'", campo->name, name);
+/* O registro só pode se conter por ponteiro: por valor (ou num array) teria tamanho infinito. */
+static int contem_por_valor(const TypeDesc *t, const TypeDesc *registro) {
+    while (t->kind == K_ARRAY) t = t->elem;
+    return t == registro;
+}
+
+/* fecha: confere os campos e só então os pendura no tipo */
+TypeDesc *declare_type_fecha(TypeDesc *t, Field *fields, int line) {
+    if (!t) return NULL;
+    for (Field *field = fields; field != NULL; field = field->next) {
+        if (contem_por_valor(field->type, t)) {
+            erro_semantico(line, "registro '%s' não pode conter a si mesmo no campo '%s'; use ^%s",
+                           t->name, field->name, t->name);
+            return NULL;
+        }
+
+        for (const Field *outro = field->next; outro; outro = outro->next) {
+            if (strcmp(field->name, outro->name) == 0) {
+                erro_semantico(line, "campo '%s' já declarado no registro '%s'", field->name, t->name);
                 return NULL;
             }
         }
     }
-
-    return type_insert(name, (TypeDesc){ .kind = K_RECORD, .fields = fields });
+    t->fields = fields;
+    return t;
 }

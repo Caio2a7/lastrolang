@@ -1,0 +1,44 @@
+// Ponteiros: ^T, nulo, novo T, p.campo e ref ^T (lista encadeada).
+type No {
+    int valor;
+    ^No prox;
+};
+
+// ref ^No: o ponteiro de quem chamou passa a apontar para o nó novo
+proc empilha(ref ^No topo, int valor) {
+    ^No novo_no := novo No;
+    novo_no.valor := valor;
+    novo_no.prox := topo;
+    topo := novo_no;
+}
+
+func soma(^No lista) -> int {
+    if (lista = nulo) {
+        return 0;
+    }
+    return lista.valor + soma(lista.prox);
+}
+
+func ultimo(^No lista) -> ^No {
+    ^No p := lista;
+    while (p.prox != nulo) {
+        p := p.prox;
+    }
+    return p;
+}
+
+proc main() {
+    ^No lista := nulo;
+    for (int i := 1 to 3) {
+        empilha(ref lista, i * 10);
+    }
+    escrever(lista.valor);
+    escrever(lista.prox.valor);
+    escrever(soma(lista));
+    ^No fim := ultimo(lista);
+    escrever(fim.valor);
+    ^No[2] cabecas := [nulo; 2];
+    cabecas[1] := lista;
+    escrever(cabecas[0] = nulo);
+    escrever(cabecas[1] != nulo);
+}

@@ -1,0 +1,25 @@
+type No {
+    int valor;
+    No prox;
+};
+
+type Folha {
+    int valor;
+    Folha[2] filhos;
+};
+
+type Item {
+    int valor;
+    ^Item prox;
+};
+
+proc main() {
+    int x := nulo;
+    ^Item p := novo Item;
+    escrever(p);
+    bool b := p < nulo;
+    ^int q := nulo;
+    bool c := p = q;
+    p.chave := 1;
+    ^Item r := p + p;
+}

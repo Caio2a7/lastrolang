@@ -25,7 +25,7 @@ proc main() {
 }
 ```
 
-- **Tipos:** `int`, `bool`, `float`, registros e arrays de tamanho fixo (`int[MAX]`).
+- **Tipos:** `int`, `bool`, `float`, registros, arrays de tamanho fixo (`int[MAX]`) e ponteiros para registros (`^No`).
 - **Constantes globais:** `const int MAX := 1000;`
 - **Subprogramas:** `proc` (sem retorno) e `func ... -> tipo`. Parâmetros `ref` são passados por referência (alteram a variável do chamador) e marcados também na chamada: `ler(ref n)`.
 - **Comandos:** declaração com inicialização obrigatória, atribuição, chamada, `if` / `else if` / `else`, `while`, `for (int i := a to b)`, `break`, `continue` e `return`.
@@ -46,6 +46,29 @@ proc main() {
 ```
 
 Declare tipos e constantes no nível global, antes dos subprogramas. Cada campo usa um tipo disponível no momento da declaração e aparece uma vez por nome no registro. O inicializador recebe um valor por campo, na ordem da declaração. Arrays usam `[valor; tamanho]` e podem ser copiados para campos de mesmo tipo. Registros do mesmo tipo podem ser copiados, passados por valor ou com `ref` e retornados por funções. Use `.` para acessar campos, inclusive em elementos de arrays como `v[i].numerador`.
+
+### Ponteiros
+
+```lastro
+type No {
+    int chave;
+    ^No esq;
+    ^No dir;
+};
+
+proc insere(ref ^No raiz, int chave) {
+    if (raiz = nulo) {
+        raiz := novo No;
+        raiz.chave := chave;
+    } else if (chave < raiz.chave) {
+        insere(ref raiz.esq, chave);
+    } else {
+        insere(ref raiz.dir, chave);
+    }
+}
+```
+
+`^T` é o endereço de um `T`. `nulo` não aponta para nada e cabe em qualquer `^T`; `novo No` cria um `No` zerado (campos `0`, ponteiros `nulo`) e devolve o seu endereço. `p.campo` desreferencia sozinho, como o `p->campo` do C. Ponteiros só se comparam com `=` e `!=`. Um registro pode conter a si mesmo apenas por ponteiro: `No esq;` dentro de `type No` seria um tipo de tamanho infinito e é recusado. Para isso o nome do tipo entra na tabela antes do `{`, e dentro dos campos o léxico já o reconhece como tipo. A memória de `novo` não é liberada, e acessar um campo de `nulo` encerra o programa em tempo de execução, como no C.
 
 ### Decisões de projeto
 
