@@ -1,0 +1,8 @@
+// erro: linha 7: syntax error perto de '['
+// '[' só segue um ID: o resultado de uma chamada não é indexável.
+func f(int x) -> int {
+    return x;
+}
+proc main() {
+    int a := f(1)[0];
+}

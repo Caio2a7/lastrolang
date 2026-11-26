@@ -1,0 +1,5 @@
+// erro: linha 4: syntax error perto de ';'
+// a subtração ficou sem o operando da direita.
+proc main() {
+    int a := 10 - 3 -;
+}

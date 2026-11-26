@@ -1,0 +1,6 @@
+// erro: linha 5: syntax error perto de '('
+// '(' só segue um ID: v[0] não é subprograma.
+proc main() {
+    int[2] v := [0; 2];
+    int a := v[0](1);
+}

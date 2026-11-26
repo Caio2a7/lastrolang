@@ -1,0 +1,54 @@
+// if aninhado com else: com as chaves obrigatórias, o else só pode vir logo depois do
+// '}' do bloco do seu próprio if. No estado do "bloco ." o parser empilha ELSE quando
+// ele aparece e reduz o if sem else em qualquer outro token: não há o que escolher.
+proc classifica(int saldo, int limite) {
+    if (saldo >= 0) {
+        if (saldo > limite) {
+            escrever("acima do limite");
+        } else {
+            escrever("dentro do limite");
+        }
+    } else {
+        escrever("negativo");
+    }
+}
+
+proc faixa(int v) {
+    if (v < 100) {
+        escrever(1);
+    } else if (v < 1000) {
+        escrever(2);
+    } else if (v < 10000) {
+        escrever(3);
+    } else {
+        escrever(4);
+    }
+}
+
+proc main() {
+    classifica(500, 100);    // saida: acima do limite
+    classifica(50, 100);     // saida: dentro do limite
+    classifica(-1, 100);     // saida: negativo
+
+    // o else é do if de fora: o de dentro é falso e nada imprime
+    if (true) {
+        if (false) {
+            escrever("interno");
+        }
+    } else {
+        escrever("externo");
+    }
+    // o else é do if de dentro
+    if (true) {
+        if (false) {
+            escrever("interno");
+        } else {
+            escrever("else interno");   // saida: else interno
+        }
+    }
+
+    faixa(5);        // saida: 1
+    faixa(500);      // saida: 2
+    faixa(5000);     // saida: 3
+    faixa(50000);    // saida: 4
+}

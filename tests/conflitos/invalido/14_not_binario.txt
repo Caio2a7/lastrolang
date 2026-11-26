@@ -1,0 +1,5 @@
+// erro: linha 4: syntax error perto de '!'
+// '!' é só prefixo: entre dois operandos ele não forma expressão.
+proc main() {
+    bool b := true ! false;
+}

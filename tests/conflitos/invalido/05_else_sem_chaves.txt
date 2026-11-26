@@ -1,0 +1,7 @@
+// erro: linha 6: syntax error perto de 'escrever'
+// o ramo do else também exige bloco (ou um novo if).
+proc main() {
+    if (true) {
+        escrever(1);
+    } else escrever(2);
+}

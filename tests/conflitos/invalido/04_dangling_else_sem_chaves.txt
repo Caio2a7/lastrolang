@@ -1,0 +1,8 @@
+// erro: linha 7: syntax error perto de 'if'
+// o caso clássico do dangling else não é aceito: depois de "if (expr)"
+// a gramática exige '{', e é isso que elimina o conflito.
+proc main() {
+    bool a := true;
+    bool b := false;
+    if (a) if (b) escrever(1); else escrever(2);
+}

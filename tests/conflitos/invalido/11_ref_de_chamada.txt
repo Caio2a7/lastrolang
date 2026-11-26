@@ -1,0 +1,11 @@
+// erro: linha 11: erro semântico: 'f' é um subprograma, não uma variável
+// erro: linha 11: syntax error perto de '('
+// depois de 'ref' só cabe alvo (variável ou elemento de array). O estado de ID
+// ali não tem ação para '(', então a ação padrão reduz f a alvo (o semântico
+// acusa que f não é variável) e só depois o '(' dá o erro de sintaxe.
+proc g(ref int x) {
+}
+func f(int x) -> int {
+    return x;
+}
+proc main() { g(ref f(1)); }
