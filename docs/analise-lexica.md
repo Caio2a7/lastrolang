@@ -1,6 +1,6 @@
 # 2A. Unidades léxicas
 
-O analisador léxico de Lastro fica em `src/lexer/lexer.l`, e o flex o transforma na função `yylex()`. Quem comanda a leitura é o analisador sintático, que pede um token por vez. A cada pedido, o léxico lê a entrada padrão até fechar o próximo lexema e devolve o código do token. Se o token tem valor, como um identificador ou um número, o lexema vai para `yylval.str`. A opção `%option yylineno` guarda a linha corrente, e todas as mensagens de erro do compilador usam esse número, sejam elas léxicas, sintáticas ou semânticas. O léxico não mexe na tabela de símbolos. Ele entrega só o texto do identificador, e o analisador sintático decide se aquilo é uma declaração ou um uso, como fixamos no Problema 6.
+O analisador léxico de Lastro fica em `src/lexer/lexer.l`, e o flex o transforma na função `yylex()`. Quem comanda a leitura é o analisador sintático, que pede um token por vez. A cada pedido, o léxico lê a entrada padrão até fechar o próximo lexema e devolve o código do token. Se o token tem valor, como um identificador ou um número, o lexema vai para `yylval.str`. A opção `%option yylineno` guarda a linha corrente, e todas as mensagens de erro do compilador usam esse número, sejam elas léxicas, sintáticas ou semânticas. O léxico consulta a tabela de tipos para classificar identificadores. As ações do parser cadastram as declarações nas tabelas.
 
 ## Tokens e expressões regulares
 
@@ -8,7 +8,7 @@ A especificação parte de três definições auxiliares: `digito = [0-9]`, `let
 
 | Classe | Lexema ou expressão regular | Token |
 |---|---|---|
-| Palavra reservada | `const` `proc` `func` | `CONST` `PROC` `FUNC` |
+| Palavra reservada | `const` `proc` `func` `type` | `CONST` `PROC` `FUNC` `TYPE` |
 | Palavra reservada | `int` `float` `bool` | `INT` `FLOAT` `BOOL` |
 | Palavra reservada | `if` `else` `while` `for` `to` | `IF` `ELSE` `WHILE` `FOR` `TO` |
 | Palavra reservada | `switch` `case` `default` | `SWITCH` `CASE` `DEFAULT` |
@@ -25,16 +25,16 @@ A especificação parte de três definições auxiliares: `digito = [0-9]`, `let
 | Texto sem fechar | `\"[^\"\\\n]*` | `ERRO` |
 | Literal real | `{digito}+"."{digito}+` | `LITERAL_FLOAT` |
 | Literal inteiro | `{digito}+` | `LITERAL_INT` |
-| Identificador | `{ident}` | `ID` |
+| Identificador | `{ident}` | `TYPE_ID` para nomes cadastrados na tabela de tipos, `ID` nos demais casos |
 | Erro | `.` (qualquer outro caractere) | `ERRO` |
 
-A linguagem tem 20 palavras reservadas, todas em minúsculas. Como ela diferencia maiúsculas de minúsculas, `If` e `WHILE` são identificadores comuns. `ler` e `escrever` também são identificadores: chegam ao parser como `ID` e entram na tabela de símbolos como subprogramas embutidos, de modo que a análise semântica confere uma chamada a eles do mesmo jeito que confere qualquer outra.
+A linguagem tem 21 palavras reservadas, todas em minúsculas. Como ela diferencia maiúsculas de minúsculas, `If` e `WHILE` são identificadores comuns. `ler` e `escrever` também são identificadores: chegam ao parser como `ID` e entram na tabela de símbolos como subprogramas embutidos, de modo que a análise semântica confere uma chamada a eles do mesmo jeito que confere qualquer outra.
 
 Todo identificador começa com uma letra ASCII e continua com letras, dígitos ou sublinhado. Deixamos as letras acentuadas de fora porque o código de sistemas financeiros conversa com bibliotecas C e com sistemas legados (Problema 1), e um nome como `preço` não teria equivalente direto no C gerado. O literal inteiro é uma sequência de dígitos, sem sinal. Em `-5`, o `-` é o operador unário da gramática. O literal real exige dígitos dos dois lados do ponto (`2.5`; `2.` e `.5` não são aceitos). Em `2.5`, as regras de inteiro e de real casam ao mesmo tempo, e o casamento mais longo escolhe `LITERAL_FLOAT`. Valores monetários continuam sendo guardados como inteiros (em centavos ou pontos-base), como decidido no Problema 1. O `float` existe para os cálculos não monetários e para a coerção de `int` para `float` exigida na avaliação.
 
 O literal de texto fica entre aspas, na mesma linha e sem `\`, e vai para o C exatamente como foi escrito. A linguagem não tem tipo `string`: o texto só é aceito como argumento de `escrever`, para as mensagens exigidas nos problemas de avaliação. Quando as aspas não fecham na linha, ou quando aparece uma `\`, só a regra de texto sem fechar casa, e o léxico reporta `texto sem aspas de fechamento`.
 
-O léxico já reconhece `SWITCH`, `CASE`, `DEFAULT` e `DOT`, mas a gramática ainda não usa esses tokens em nenhuma produção. Eles ficam reservados para o comando `switch` e para o acesso a campo de registro, e o yacc os aponta como terminais não usados. Quando um deles aparece num programa, o léxico o aceita e o parser acusa erro de sintaxe.
+O parser usa `TYPE` na declaração de registros e `DOT` no acesso a seus campos. O léxico também reconhece `SWITCH`, `CASE` e `DEFAULT`, que seguem reservados para o comando `switch`.
 
 ## Casamento mais longo e palavras reservadas antes de identificador
 
@@ -42,7 +42,7 @@ O flex desempata com duas regras. Pela primeira, o casamento mais longo (longest
 
 Com o casamento mais longo, os operadores que começam igual não precisam de tratamento especial. Em `<=`, tanto `"<="` quanto `"<"` casam, mas a primeira leva dois caracteres e ganha. O mesmo vale para `:=` e `=`, `>=` e `>`, `!=` e `!`, `->` e `-`, e por isso a ordem dessas regras no arquivo não muda nada. O comentário segue a mesma lógica: `"//".*` sempre consome mais que `"/"`, então duas barras seguidas nunca viram duas divisões.
 
-Nas palavras reservadas, quem decide é a ordem. `while` casa `"while"` e também `{ident}`, com o mesmo comprimento, e só é lido como palavra reservada porque essas regras estão antes da regra de identificador (linhas 22 a 40, contra a linha 69). Se a ordem fosse invertida, o léxico nunca devolveria uma palavra reservada. O casamento mais longo cobre o caso inverso. Em `ifx`, a regra `"if"` casa dois caracteres e `{ident}` casa três, então `ifx` é um identificador, e o programador pode dar a uma variável um nome que começa com uma palavra reservada.
+Nas palavras reservadas, quem decide é a ordem. `while` casa `"while"` e também `{ident}`, com o mesmo comprimento, e é lido como palavra reservada porque sua regra vem antes da regra de identificador. Se a ordem fosse invertida, o léxico nunca devolveria uma palavra reservada. O casamento mais longo cobre o caso inverso. Em `ifx`, a regra `"if"` casa dois caracteres e `{ident}` casa três, então `ifx` é um identificador, e o programador pode dar a uma variável um nome que começa com uma palavra reservada.
 
 ## Comentários, espaços e erro léxico
 

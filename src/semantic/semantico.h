@@ -43,8 +43,10 @@ Atr coage(Atr e, const TypeDesc *destino);
 /* Verifica atribuição/inicialização; reporta erro em 'linha' se incompatível. */
 int verifica_atribuicao(const TypeDesc *destino, const TypeDesc *origem, int linha, const char *ctx);
 
-/* Verifica indexação nome[idx]: exige array e índice int; devolve o atributo do elemento. */
-Atr verifica_indexacao(const char *nome, Symbol *s, Atr idx, int linha);
+/* Verifica indexação de um alvo e devolve o atributo do elemento. */
+Atr verifica_indexacao(Atr base, Atr idx, int linha);
+
+Atr verifica_campo(Atr base, const char *nome, int linha);
 
 /* Argumento de chamada em lista encadeada, na ordem da esquerda para a direita. */
 typedef struct Arg {
@@ -57,6 +59,8 @@ typedef struct Arg {
 
 /* Cria um nó de argumento para a lista de argumentos de uma chamada. */
 Arg *arg_novo(char *cod, TypeDesc *tipo, int is_ref, int linha);
+
+void libera_args(Arg *args);
 
 /* Verifica chamada de subprograma (existência, aridade, tipos, ref e embutidos). */
 Atr verifica_chamada(const char *nome, Arg *args, int linha);
@@ -97,5 +101,7 @@ Subprog *use_sub(const char *name, int line);
 
 /* Acrescenta o parâmetro ao fim da lista do subprograma e conta n_params. */
 void append_param(Subprog *sub, Symbol *param);
+
+TypeDesc *declare_type(const char *name, Field *fields, int line);
 
 #endif

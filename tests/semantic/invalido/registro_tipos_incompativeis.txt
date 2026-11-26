@@ -1,0 +1,21 @@
+type Item {
+    int valor;
+};
+
+type Outro {
+    int valor;
+};
+
+func cria() -> Item {
+    Outro outro := {2};
+    return outro;
+}
+
+proc main() {
+    Item item := {1};
+    Outro outro := {2};
+    item := outro;
+    item.valor := true;
+    escrever(item.inexistente);
+    Item item_extra := {1, 2};
+}
