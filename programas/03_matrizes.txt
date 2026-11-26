@@ -7,10 +7,12 @@ const int MAX := 20;
 proc main() {
     int la := 0;
     int ca := 0;
+    escrever("Numero de linhas e de colunas de A:");
     ler(ref la);
     ler(ref ca);
 
     int[MAX][MAX] a := [0; MAX, MAX];
+    escrever("Elementos de A, linha por linha:");
     for (int i := 0 to la - 1) {
         for (int j := 0 to ca - 1) {
             ler(ref a[i][j]);
@@ -19,10 +21,12 @@ proc main() {
 
     int lb := 0;
     int cb := 0;
+    escrever("Numero de linhas e de colunas de B:");
     ler(ref lb);
     ler(ref cb);
 
     int[MAX][MAX] b := [0; MAX, MAX];
+    escrever("Elementos de B, linha por linha:");
     for (int i := 0 to lb - 1) {
         for (int j := 0 to cb - 1) {
             ler(ref b[i][j]);
@@ -32,6 +36,7 @@ proc main() {
     // Soma de matrizes: exige mesmas dimensões (la = lb e ca = cb)
     if (la = lb && ca = cb) {
         int[MAX][MAX] soma := [0; MAX, MAX];
+        escrever("Soma (A + B):");
         for (int i := 0 to la - 1) {
             for (int j := 0 to ca - 1) {
                 soma[i][j] := a[i][j] + b[i][j];
@@ -45,6 +50,7 @@ proc main() {
     // Produto de matrizes: exige colunas de A = linhas de B (ca = lb)
     if (ca = lb) {
         int[MAX][MAX] prod := [0; MAX, MAX];
+        escrever("Produto (A * B):");
         for (int i := 0 to la - 1) {
             for (int j := 0 to cb - 1) {
                 int acum := 0;
