@@ -86,6 +86,7 @@ make                                  # gera build/compilador
 make run P=tests/valido/03_funcao_juros.txt  # traduz, compila com gcc -Wall -Werror e executa
 make test                             # válidos passam pelo gcc; inválidos têm de dar erro
 make conflitos                        # resume os conflitos do autômato LALR (build/y.output)
+make doc                              # gera RELATORIO.pdf a partir de relatorio/ (LaTeX, modelo SBC)
 make clean                            # remove build/
 ```
 
