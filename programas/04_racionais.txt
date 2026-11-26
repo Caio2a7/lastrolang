@@ -1,0 +1,106 @@
+// Defina o tipo rational_t para representar números racionais. O tipo rational_t
+// deve ser representado como um registro (ou tipo correspondente) com campos
+// inteiros numerador e denominador. Em seguida, escreva os seguintes subpro-
+// gramas:
+// A) Subprograma que, dados dois parâmetros inteiros a e b, onde b̸ = 0, retorna
+// um valor rational_t para representar a fração a/b.
+// B) Subprograma que, dados dois parâmetros do tipo rational_t, retorna true
+// se eles representam o mesmo número racional ou false, em caso contrário.
+// C) Subprogramas que retornem um valor rational_t correspondente a soma,
+// negação, subtração, multiplicação, inverso e divisão entre valores rational_t,
+// passados como parâmetros (um subprograma por operação).
+// No programa principal, invoque cada um dos subprogramas e imprima os resul-
+// tados produzidos, indicando numerador e denominador.
+
+type rational_t {
+    int numerador;
+    int denominador;
+};
+
+func criar_racional(int num, int den) -> rational_t {
+    rational_t r := {num, den};
+    return r;
+}
+
+func compare(rational_t r1, rational_t r2) -> bool {
+    return r1.numerador * r2.denominador = r2.numerador * r1.denominador;
+}
+
+func soma(rational_t r1, rational_t r2) -> rational_t {
+    int num := r1.numerador * r2.denominador + r2.numerador * r1.denominador;
+    int den := r1.denominador * r2.denominador;
+    return criar_racional(num, den);
+}
+
+func nega(rational_t r) -> rational_t {
+    return criar_racional(-r.numerador, r.denominador);
+}
+
+func subtrai(rational_t r1, rational_t r2) -> rational_t {
+    return soma(r1, nega(r2));
+}
+
+func multiplica(rational_t r1, rational_t r2) -> rational_t {
+    return criar_racional(r1.numerador * r2.numerador, r1.denominador * r2.denominador);
+}
+
+func inverte(rational_t r) -> rational_t {
+    // O numerador deve ser diferente de zero.
+    return criar_racional(r.denominador, r.numerador);
+}
+
+func divide(rational_t r1, rational_t r2) -> rational_t {
+    return multiplica(r1, inverte(r2));
+}
+
+proc escreve_racional(rational_t r) {
+    escrever(r.numerador);
+    escrever("----");
+    escrever(r.denominador);
+}
+
+proc main() {
+    rational_t a := criar_racional(2, 9);
+    rational_t b := criar_racional(6, 13);
+    rational_t equivalente := criar_racional(2 * a.numerador, 2 * a.denominador);
+
+    escrever("Operandos");
+    escrever("O numerador fica acima da barra e o denominador abaixo.");
+    escrever("a");
+    escreve_racional(a);
+    escrever("b");
+    escreve_racional(b);
+    escrever("e (a com numerador e denominador dobrados)");
+    escreve_racional(equivalente);
+
+    escrever("");
+    escrever("Comparações");
+    escrever("a = e");
+    escrever(compare(a, equivalente));
+    escrever("a = b");
+    escrever(compare(a, b));
+
+    escrever("");
+    escrever("Soma (a + b)");
+    escreve_racional(soma(a, b));
+
+    escrever("");
+    escrever("Negação (-a)");
+    escreve_racional(nega(a));
+
+    escrever("");
+    escrever("Subtração (a - b)");
+    escreve_racional(subtrai(a, b));
+
+    escrever("");
+    escrever("Multiplicação (a * b)");
+    escreve_racional(multiplica(a, b));
+
+    escrever("");
+    escrever("Inverso (1 / a)");
+    escreve_racional(inverte(a));
+
+    escrever("");
+    escrever("Divisão (a / b)");
+    escreve_racional(divide(a, b));
+}
